@@ -27,7 +27,22 @@ class Metric:
     ) -> None:
         self._collector = collector
         self._labels = labels
-        self._can_observe = False  # depending on labels, etc..
+        self._can_observe = self._check_can_observe()
+
+    def _check_can_observe(self) -> bool:
+        if not self._collector._required_labels:
+            return True
+
+        if not self._labels:
+            return False
+
+        # TODO: labels will need better validation checks
+        if len(self._labels) != self._collector._required_labels:
+            # TODO: custom exceptions required
+            return False
+
+        # TODO: allow partial labels
+        return True
 
 
 # this could be a class method, but might want to avoid it
