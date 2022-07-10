@@ -13,8 +13,8 @@ class MetricCollector:
 
 class Metric:
 
-    def __init__(self, parent: MetricCollector) -> None:
-        self.parent = parent
+    def __init__(self, collector: MetricCollector) -> None:
+        self._collector = collector
 
 
 @dataclass
