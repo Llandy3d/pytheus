@@ -12,7 +12,7 @@ class MetricCollector:
         self._required_labels = set(required_labels) if required_labels else None
         # TODO: pass metric class
         self._metric = Metric(self)
-        self._labeled_metrics: dict[tuple[str, str], Metric] = {}
+        self._labeled_metrics: dict[tuple[str, ...], Metric] = {}
 
         # this will register to the collector
 
@@ -37,12 +37,38 @@ class Metric:
             return False
 
         # TODO: labels will need better validation checks
-        if len(self._labels) != self._collector._required_labels:
+        if len(self._labels) != len(self._collector._required_labels):
             # TODO: custom exceptions required
             return False
 
         # TODO: allow partial labels
         return True
+
+    # TODO: calling labels again should keep previous labels by default
+    # allowing for partial labels
+    # TODO: also consider adding default labels directly on the collector as well
+    def labels(self, _labels: Labels) -> 'Metric':
+        if not _labels or self._collector._required_labels is None:
+            return self
+
+        add_to_collector: bool = True
+
+        # TODO: add labels validation
+        if len(_labels) != len(self._collector._required_labels):
+            add_to_collector = False
+
+        sorted_label_values = tuple(v for _, v in sorted(_labels.items()))
+        # get or add to collector
+        if add_to_collector:
+            if sorted_label_values in self._collector._labeled_metrics:
+                metric = self._collector._labeled_metrics[sorted_label_values]
+            else:
+                metric = self.__class__(self._collector, _labels)
+                self._collector._labeled_metrics[sorted_label_values] = metric
+        else:
+            metric = self.__class__(self._collector, _labels)
+
+        return metric
 
 
 # this could be a class method, but might want to avoid it
