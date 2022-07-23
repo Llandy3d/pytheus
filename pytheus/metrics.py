@@ -71,10 +71,32 @@ class Metric:
         return metric
 
 
+class Counter(Metric):
+
+    def __init__(
+        self,
+        collector: MetricCollector,
+        labels: Labels | None = None,
+    ) -> None:
+        super().__init__(collector, labels)
+
+        # TODO: value should be threadsafe and possibly support different kinds :)
+        # possibly asyncio support could be considered and also multiprocessing
+        self._value = 0
+
+    def inc(self, value: float) -> None:
+        self._value += value
+
+
 # this could be a class method, but might want to avoid it
 def create_metric(name: str, required_labels: Sequence[str] | None = None) -> Metric:
     collector = MetricCollector(name, required_labels)
     return Metric(collector)
+
+
+def create_counter(name: str, required_labels: Sequence[str] | None = None) -> Metric:
+    collector = MetricCollector(name, required_labels)
+    return Counter(collector)
 
 
 @dataclass
