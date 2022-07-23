@@ -9,7 +9,12 @@ Labels = dict[str, str]
 
 class MetricCollector:
 
-    def __init__(self, name: str, required_labels: Sequence[str] | None = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        metric_class: type['Metric'],
+        required_labels: Sequence[str] | None = None,
+    ) -> None:
         self.name = name
         self._required_labels = set(required_labels) if required_labels else None
         # TODO: pass metric class
@@ -84,7 +89,7 @@ class Counter(Metric):
 
         # TODO: value should be threadsafe and possibly support different kinds :)
         # possibly asyncio support could be considered and also multiprocessing
-        self._value = 0
+        self._value: float = 0
 
     def inc(self, value: float) -> None:
         if not self._can_observe:
@@ -95,12 +100,12 @@ class Counter(Metric):
 
 # this could be a class method, but might want to avoid it
 def create_metric(name: str, required_labels: Sequence[str] | None = None) -> Metric:
-    collector = MetricCollector(name, required_labels)
+    collector = MetricCollector(name, Metric, required_labels)
     return Metric(collector)
 
 
 def create_counter(name: str, required_labels: Sequence[str] | None = None) -> Metric:
-    collector = MetricCollector(name, required_labels)
+    collector = MetricCollector(name, Counter, required_labels)
     return Counter(collector)
 
 
