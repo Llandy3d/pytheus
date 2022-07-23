@@ -17,8 +17,7 @@ class MetricCollector:
     ) -> None:
         self.name = name
         self._required_labels = set(required_labels) if required_labels else None
-        # TODO: pass metric class
-        self._metric = Metric(self)
+        self._metric = metric_class(self)
         self._labeled_metrics: dict[tuple[str, ...], Metric] = {}
 
         # this will register to the collector
