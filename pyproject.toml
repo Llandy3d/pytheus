@@ -13,3 +13,8 @@ classifiers = [
 
 [project.urls]
 repository = "https://github.com/Llandy3d/pytheus"
+
+[project.optional-dependencies]
+test = [
+  "pytest >= 7.0.0",
+]
