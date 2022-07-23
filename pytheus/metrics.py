@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Sequence
 
+from pytheus.exceptions import UnobservableMetricException
+
 
 Labels = dict[str, str]
 
@@ -85,6 +87,9 @@ class Counter(Metric):
         self._value = 0
 
     def inc(self, value: float) -> None:
+        if not self._can_observe:
+            raise UnobservableMetricException
+
         self._value += value
 
 
