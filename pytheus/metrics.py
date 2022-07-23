@@ -77,6 +77,9 @@ class Metric:
 
         return metric
 
+    def __repr__(self) -> str:
+        return f'{self.__class__.__qualname__}({self._collector.name})'
+
 
 class Counter(Metric):
 
