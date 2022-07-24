@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -5,6 +6,9 @@ from pytheus.exceptions import UnobservableMetricException
 
 
 Labels = dict[str, str]
+
+
+metric_name_re = re.compile(r'[a-zA-Z_:][a-zA-Z0-9_:]*')
 
 
 class MetricCollector:
@@ -15,6 +19,8 @@ class MetricCollector:
         metric_class: type['Metric'],
         required_labels: Sequence[str] | None = None,
     ) -> None:
+        if metric_name_re.fullmatch(name) is None:
+            raise ValueError(f'Invalid metric name: {name}')
         self.name = name
         self._required_labels = set(required_labels) if required_labels else None
         self._metric = metric_class(self)
