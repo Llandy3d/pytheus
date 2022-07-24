@@ -9,6 +9,7 @@ Labels = dict[str, str]
 
 
 metric_name_re = re.compile(r'[a-zA-Z_:][a-zA-Z0-9_:]*')
+label_name_re = re.compile(r'[a-zA-Z_][a-zA-Z0-9_]*')
 
 
 class MetricCollector:
@@ -21,12 +22,25 @@ class MetricCollector:
     ) -> None:
         if metric_name_re.fullmatch(name) is None:
             raise ValueError(f'Invalid metric name: {name}')
+
+        if required_labels:
+            self._validate_labels(required_labels)
+
         self.name = name
         self._required_labels = set(required_labels) if required_labels else None
         self._metric = metric_class(self)
         self._labeled_metrics: dict[tuple[str, ...], Metric] = {}
 
         # this will register to the collector
+
+    def _validate_labels(self, labels: Sequence[str]):
+        """
+        Validates label names according to the regex.
+        Labels starting with `__` are reserved for internal use.
+        """
+        for label in labels:
+            if label.startswith('__') or label_name_re.fullmatch(label) is None:
+                raise ValueError(f'Invalid label name: {label}')
 
 
 # class or function based creation ?

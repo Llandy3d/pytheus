@@ -32,3 +32,21 @@ class TestMetricCollector:
     def test_name_with_incorrect_values(self, name):
         with pytest.raises(ValueError):
             MetricCollector(name, Metric)
+
+    def test_validate_label_with_correct_values(self):
+        labels = ['action', 'method', '_type']
+        collector = MetricCollector('name', Metric)
+        collector._validate_labels(labels)
+
+    @pytest.mark.parametrize(
+        'label',
+        [
+            '__private',
+            'microµ',
+            '@type',
+        ],
+    )
+    def test_validate_label_with_incorrect_values(self, label):
+        collector = MetricCollector('name', Metric)
+        with pytest.raises(ValueError):
+            collector._validate_labels([label])
