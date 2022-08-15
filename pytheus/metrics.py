@@ -2,6 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import Sequence
 
+from pytheus.backends import LockedValue
 from pytheus.exceptions import UnobservableMetricException
 
 
@@ -117,7 +118,7 @@ class Counter(Metric):
 
         # TODO: value should be threadsafe and possibly support different kinds :)
         # possibly asyncio support could be considered and also multiprocessing
-        self._value: float = 0
+        self._value: LockedValue = LockedValue()  # TODO: support multiples
 
     def inc(self, value: float = 1.0) -> None:
         """
@@ -129,7 +130,7 @@ class Counter(Metric):
         if value < 0:
             raise ValueError(f'Counter increase value ({value}) must be >= 0')
 
-        self._value += value
+        self._value.inc(value)
 
 
 # this could be a class method, but might want to avoid it
