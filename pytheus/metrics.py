@@ -70,6 +70,11 @@ class Metric:
         # TODO: allow partial labels
         return True
 
+    def _raise_if_cannot_observe(self) -> None:
+        """Raise if the metric cannot be observed, for example if labels values are missing."""
+        if not self._can_observe:
+            raise UnobservableMetricException
+
     # TODO: calling labels again should keep previous labels by default
     # allowing for partial labels
     # TODO: also consider adding default labels directly on the collector as well
@@ -100,6 +105,7 @@ class Metric:
         return f'{self.__class__.__qualname__}({self._collector.name})'
 
 
+# TODO: count exception raised
 class Counter(Metric):
 
     def __init__(
@@ -113,9 +119,15 @@ class Counter(Metric):
         # possibly asyncio support could be considered and also multiprocessing
         self._value: float = 0
 
-    def inc(self, value: float) -> None:
-        if not self._can_observe:
-            raise UnobservableMetricException
+    def inc(self, value: float = 1.0) -> None:
+        """
+        Increments the value by the given amount.
+        By default it will be 1.
+        value must be >= 0.
+        """
+        self._raise_if_cannot_observe()
+        if value < 0:
+            raise ValueError(f'Counter increase value ({value}) must be >= 0')
 
         self._value += value
 

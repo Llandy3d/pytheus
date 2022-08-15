@@ -1,6 +1,6 @@
 import pytest
 
-from pytheus.metrics import MetricCollector, Metric
+from pytheus.metrics import MetricCollector, Metric, create_counter
 
 
 class TestMetricCollector:
@@ -50,3 +50,21 @@ class TestMetricCollector:
         collector = MetricCollector('name', Metric)
         with pytest.raises(ValueError):
             collector._validate_labels([label])
+
+
+class TestCounter:
+
+    def test_can_increment(self):
+        counter = create_counter('name')
+        counter.inc()
+        assert counter._value == 1
+
+    def test_can_increment_with_value(self):
+        counter = create_counter('name')
+        counter.inc(7.2)
+        assert counter._value == 7.2
+
+    def test_negative_increment_raises(self):
+        counter = create_counter('name')
+        with pytest.raises(ValueError):
+            counter.inc(-1)
