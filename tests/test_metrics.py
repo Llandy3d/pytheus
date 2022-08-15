@@ -69,3 +69,24 @@ class TestCounter:
     def test_negative_increment_raises(self, counter):
         with pytest.raises(ValueError):
             counter.inc(-1)
+
+    def test_count_exception(self, counter):
+        with pytest.raises(ValueError):
+            with counter.count_exceptions():
+                raise ValueError
+
+        assert counter._value.get() == 1
+
+    def test_count_exception_with_specified(self, counter):
+        with pytest.raises(ValueError):
+            with counter.count_exceptions((IndexError, ValueError)):
+                raise ValueError
+
+        assert counter._value.get() == 1
+
+    def test_count_exception_with_specified_is_ignored(self, counter):
+        with pytest.raises(ValueError):
+            with counter.count_exceptions(IndexError):
+                raise ValueError
+
+        assert counter._value.get() == 0

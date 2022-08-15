@@ -1,4 +1,6 @@
 import re
+from collections.abc import Generator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -131,6 +133,25 @@ class Counter(Metric):
             raise ValueError(f'Counter increase value ({value}) must be >= 0')
 
         self._value.inc(value)
+
+    # TODO: consider adding decorator support
+    @contextmanager
+    def count_exceptions(
+        self,
+        exceptions: type[Exception] | tuple[Exception] | None = None
+    ) -> Generator[None, None, None]:
+        """
+        Will count and reraise raised exceptions.
+        It is possibly to specify which exceptions to track.
+        """
+        if exceptions is None:
+            exceptions = Exception
+
+        try:
+            yield
+        except exceptions:
+            self.inc()
+            raise
 
 
 # this could be a class method, but might want to avoid it
