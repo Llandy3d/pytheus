@@ -61,15 +61,12 @@ import json
 import os
 
 with open("./config.json", "w") as f:
-    f.write('{"config_key_1": 1}')
+    f.write('{"pytheus_file_directory": "./"}')
 
 os.environ["PYTHEUS_BACKEND_CLASS"] = "MultipleProcessFileBackend"
 os.environ["PYTHEUS_BACKEND_CONFIG"] = "./config.json"
 
 from pytheus.metrics import create_counter
-from pytheus.backends import load_backend_from_env
-
-load_backend_from_env()
 
 counter = create_counter(
     name="my_metric",
@@ -78,26 +75,26 @@ counter = create_counter(
 print(counter._metric_value_backend.__class__)
 # <class 'pytheus.backends.MultipleProcessFileBackend'>
 print(counter._metric_value_backend.config)
-# {'config_key_1': 1}
+# {'pytheus_file_directory': "./"}
 
 os.remove("config.json")
 ```
 
-You can pass the values directly at instantiation time, which overrides the environment variables:
+You can pass the values directly in Python, which would take precedence over the environment setup:
 
 ```python
 
 from pytheus.metrics import create_counter
-from pytheus.backends import MultipleProcessFileBackend
+from pytheus.backends import MultipleProcessFileBackend, load_backend
+
+load_backend(backend_class=MultipleProcessFileBackend, backend_config={"pytheus_file_directory": "./"})
 
 counter = create_counter(
     name="my_metric",
     required_labels=["label_a", "label_b"],
-    backend_class=MultipleProcessFileBackend,
-    backend_config={"config_key_1": 45},
 )
 print(counter._metric_value_backend.__class__)
 # <class 'pytheus.backends.MultipleProcessFileBackend'>
 print(counter._metric_value_backend.config)
-# {'config_key_1': 1}
+# {'pytheus_file_directory': "./"}
 ```

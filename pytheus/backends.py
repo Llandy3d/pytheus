@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import json
 import os
 from threading import Lock
-from typing import Any
+from typing import Any, Optional, Tuple
 
 from pytheus.exceptions import PytheusException
 
@@ -33,25 +33,42 @@ class InvalidBackendConfigException(PytheusException):
     pass
 
 
-def load_backend_from_env():
+def load_backend(
+    backend_class: Optional[Backend] = None,
+    backend_config: Optional[BackendConfig] = None,
+):
+
     # Load default backend class
+    global BACKEND_CLASS
     backend_class_env_var: str = "PYTHEUS_BACKEND_CLASS"
-    if backend_class_env_var in os.environ:
+    if backend_class is not None:  # Explicit
+        BACKEND_CLASS = backend_class
+    elif backend_class_env_var in os.environ:  # Environment
         class_name = os.environ[backend_class_env_var]
         try:
-            global DEFAULT_BACKEND_CLASS
-            DEFAULT_BACKEND_CLASS = globals()[class_name]
+            BACKEND_CLASS = globals()[class_name]
         except KeyError:
             raise InvalidBackendClassException(class_name)
+    else:  # Default
+        BACKEND_CLASS = SingleProcessBackend
+
     # Load default backend config
+    global BACKEND_CONFIG
     backend_config_env_var: str = "PYTHEUS_BACKEND_CONFIG"
-    if backend_config_env_var in os.environ:
+    if backend_config is not None:  # Explicit
+        BACKEND_CONFIG = backend_config
+    if backend_config_env_var in os.environ:  # Environment
         try:
             with open(os.environ[backend_config_env_var]) as f:
-                global DEFAULT_BACKEND_CONFIG
-                DEFAULT_BACKEND_CONFIG = json.loads(f.read())  # TODO: Support yaml?
+                BACKEND_CONFIG = json.loads(f.read())  # TODO: Support yaml?
         except Exception as e:
             raise InvalidBackendConfigException(f"{e.__class__}: {e}")
+    else:
+        BACKEND_CONFIG = {}  # Default
+
+
+def get_backend() -> Tuple[Backend, BackendConfig]:
+    return BACKEND_CLASS, BACKEND_CONFIG
 
 
 class SingleProcessBackend(Backend):
@@ -91,5 +108,5 @@ class MultipleProcessRedisBackend(Backend):
         pass  # TODO
 
 
-DEFAULT_BACKEND_CLASS: Backend = SingleProcessBackend
-DEFAULT_BACKEND_CONFIG: BackendConfig = {}
+BACKEND_CLASS: Backend
+BACKEND_CONFIG: BackendConfig

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import os
 from typing import Optional, Sequence, Iterator
 
-from pytheus.backends import (Backend, BackendConfig)
+from pytheus.backends import get_backend
 from pytheus.exceptions import PytheusException
 
 
@@ -81,17 +81,12 @@ class Metric:
         self,
         collector: MetricCollector,
         labels: Labels | None = None,
-        backend_class: Optional[Backend] = None,
-        backend_config: Optional[BackendConfig] = None,
     ) -> None:
         self._collector = collector
         self._labels = labels
         self._can_observe = self._check_can_observe()
-        if backend_class is not None and backend_config is not None:
-            self._metric_value_backend = backend_class(backend_config)
-        else:
-            from pytheus.backends import DEFAULT_BACKEND_CLASS, DEFAULT_BACKEND_CONFIG
-            self._metric_value_backend = DEFAULT_BACKEND_CLASS(DEFAULT_BACKEND_CONFIG)
+        backend_class, backend_config = get_backend()
+        self._metric_value_backend = backend_class(backend_config)
 
     def _check_can_observe(self) -> bool:
         if not self._collector._required_labels:
@@ -191,21 +186,17 @@ class Counter(Metric):
 def create_metric(
     name: str,
     required_labels: Sequence[str] | None = None,
-    backend_class: Optional[Backend] = None,
-    backend_config: Optional[BackendConfig] = None,
 ) -> Metric:
     collector = MetricCollector(name, Metric, required_labels)
-    return Metric(collector, backend_class=backend_class, backend_config=backend_config)
+    return Metric(collector)
 
 
 def create_counter(
     name: str,
     required_labels: Sequence[str] | None = None,
-    backend_class: Optional[Backend] = None,
-    backend_config: Optional[BackendConfig] = None,
 ) -> Metric:
     collector = MetricCollector(name, Counter, required_labels)
-    return Counter(collector, backend_class=backend_class, backend_config=backend_config)
+    return Counter(collector)
 
 
 # maybe just go with the typing alias
