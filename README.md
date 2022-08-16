@@ -44,7 +44,9 @@ counter = create_counter(
     required_labels=["label_a", "label_b"],
 )
 print(counter._metric_value_backend.__class__)
+# <class 'pytheus.backends.SingleProcessBackend'>
 print(counter._metric_value_backend.config)
+# {}
 ```
 
 You can define environment configuration to have different defaults, using two environment variables:
@@ -74,7 +76,9 @@ counter = create_counter(
     required_labels=["label_a", "label_b"],
 )
 print(counter._metric_value_backend.__class__)
+# <class 'pytheus.backends.MultipleProcessFileBasedBackend'>
 print(counter._metric_value_backend.config)
+# {'config_key_1': 1}
 
 os.remove("config.json")
 ```
@@ -93,5 +97,7 @@ counter = create_counter(
     backend_config={"config_key_1": 45},
 )
 print(counter._metric_value_backend.__class__)
+# <class 'pytheus.backends.MultipleProcessFileBasedBackend'>
 print(counter._metric_value_backend.config)
+# {'config_key_1': 1}
 ```
