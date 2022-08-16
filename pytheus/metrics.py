@@ -2,7 +2,7 @@ import re
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Sequence, Iterator
 
 from pytheus.backends import LockedValue
 from pytheus.exceptions import UnobservableMetricException
@@ -15,7 +15,19 @@ metric_name_re = re.compile(r'[a-zA-Z_:][a-zA-Z0-9_:]*')
 label_name_re = re.compile(r'[a-zA-Z_][a-zA-Z0-9_]*')
 
 
+@dataclass
+class Sample:
+    suffix: str
+    labels: dict[str, str] | None
+    value: float
+
+
 class MetricCollector:
+    """
+    #TODO
+
+    _labeled_metrics contains all observable metrics when required_labels is set.
+    """
 
     def __init__(
         self,
@@ -39,11 +51,23 @@ class MetricCollector:
     def _validate_labels(self, labels: Sequence[str]):
         """
         Validates label names according to the regex.
-        Labels starting with `__` are reserved for internal use.
+        Labels starting with `__` are reserved for internal use by Prometheus.
         """
         for label in labels:
             if label.startswith('__') or label_name_re.fullmatch(label) is None:
                 raise ValueError(f'Invalid label name: {label}')
+
+    def collect(self) -> Sequence[Sample] | Iterator[Sample]:
+        """
+        Collects Samples for the metric.
+        If there are no required labels, will return a sequence with a single Sample.
+        If there are required labels, it will return an Iterator of all the Samples.
+        """
+        if self._required_labels:
+            labeled_metrics = (metric.collect() for metric in self._labeled_metrics.values())
+            return labeled_metrics
+        else:
+            return (self._metric.collect(),)
 
 
 # class or function based creation ?
@@ -104,6 +128,9 @@ class Metric:
 
         return metric
 
+    def collect(self) -> Sample:
+        raise NotImplementedError
+
     def __repr__(self) -> str:
         return f'{self.__class__.__qualname__}({self._collector.name})'
 
@@ -153,6 +180,12 @@ class Counter(Metric):
             self.inc()
             raise
 
+    def collect(self) -> Sample:
+        # TODO: probably need a way to add default metric creation labels
+        # ideally on Metric class initialization
+        # while being careful of not messing up the tracking logic
+        return Sample('_total', self._labels, self._value.get())
+
 
 # this could be a class method, but might want to avoid it
 def create_metric(name: str, required_labels: Sequence[str] | None = None) -> Metric:
@@ -163,13 +196,6 @@ def create_metric(name: str, required_labels: Sequence[str] | None = None) -> Me
 def create_counter(name: str, required_labels: Sequence[str] | None = None) -> Metric:
     collector = MetricCollector(name, Counter, required_labels)
     return Counter(collector)
-
-
-@dataclass
-class Sample:
-    name: str
-    labels: dict[str, str]
-    value: float
 
 
 # maybe just go with the typing alias
