@@ -81,8 +81,7 @@ class Metric:
         self._collector = collector
         self._labels = labels
         self._can_observe = self._check_can_observe()
-        backend_class, backend_config = get_backend()
-        self._metric_value_backend = backend_class(backend_config)
+        self._metric_value_backend = get_backend()
 
     def _check_can_observe(self) -> bool:
         if not self._collector._required_labels:

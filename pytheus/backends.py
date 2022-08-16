@@ -76,8 +76,9 @@ def load_backend(
         BACKEND_CONFIG = {}  # Default
 
 
-def get_backend() -> Tuple[Backend, BackendConfig]:
-    return BACKEND_CLASS, BACKEND_CONFIG
+def get_backend() -> Backend:
+    # Probably ok not to cache this and allow each metric to keep its own
+    return BACKEND_CLASS(BACKEND_CONFIG)
 
 
 class SingleProcessBackend(Backend):
