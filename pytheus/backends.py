@@ -71,7 +71,7 @@ class SingleProcessBackend(Backend):
             return self._value
 
 
-class MultipleProcessFileBasedBackend(Backend):
+class MultipleProcessFileBackend(Backend):
     """Provides a multi-process backend that uses MMAP files."""
 
     def inc(self, value: float) -> None:
