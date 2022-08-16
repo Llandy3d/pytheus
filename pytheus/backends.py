@@ -1,26 +1,23 @@
-from abc import ABC, abstractmethod
 import importlib
 import json
 import os
 from threading import Lock
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Protocol
 
 from pytheus.exceptions import InvalidBackendClassException, InvalidBackendConfigException
 
 BackendConfig = dict[str, Any]
 
 
-class Backend(ABC):
+class Backend(Protocol):
     def __init__(self, config: BackendConfig):
         self.config = config  # TODO: We should discuss validation here (jsonschema, pydantic, etc)
 
-    @abstractmethod
     def inc(self, value: float) -> None:
-        pass
+        """Increment metric value"""
 
-    @abstractmethod
     def get(self) -> float:
-        pass
+        """Get metric value"""
 
 
 def _import_backend_class(full_import_path: str) -> Backend:
