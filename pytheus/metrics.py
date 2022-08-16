@@ -2,10 +2,15 @@ import re
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Sequence
+import os
+from typing import Optional, Sequence
 
-from pytheus.backends import LockedValue
-from pytheus.exceptions import UnobservableMetricException
+from pytheus.backends import (Backend, BackendConfig)
+from pytheus.exceptions import PytheusException
+
+
+class UnobservableMetricException(PytheusException):
+    pass
 
 
 Labels = dict[str, str]
@@ -48,15 +53,21 @@ class MetricCollector:
 
 # class or function based creation ?
 class Metric:
-
     def __init__(
         self,
         collector: MetricCollector,
         labels: Labels | None = None,
+        backend_class: Optional[Backend] = None,
+        backend_config: Optional[BackendConfig] = None,
     ) -> None:
         self._collector = collector
         self._labels = labels
         self._can_observe = self._check_can_observe()
+        if backend_class is not None and backend_config is not None:
+            self._backend = backend_class(backend_config)
+        else:
+            from pytheus.backends import DEFAULT_BACKEND_CLASS, DEFAULT_BACKEND_CONFIG
+            self._backend = DEFAULT_BACKEND_CLASS(DEFAULT_BACKEND_CONFIG)
 
     def _check_can_observe(self) -> bool:
         if not self._collector._required_labels:
@@ -111,17 +122,6 @@ class Metric:
 # TODO: count exception raised
 class Counter(Metric):
 
-    def __init__(
-        self,
-        collector: MetricCollector,
-        labels: Labels | None = None,
-    ) -> None:
-        super().__init__(collector, labels)
-
-        # TODO: value should be threadsafe and possibly support different kinds :)
-        # possibly asyncio support could be considered and also multiprocessing
-        self._value: LockedValue = LockedValue()  # TODO: support multiples
-
     def inc(self, value: float = 1.0) -> None:
         """
         Increments the value by the given amount.
@@ -132,7 +132,7 @@ class Counter(Metric):
         if value < 0:
             raise ValueError(f'Counter increase value ({value}) must be >= 0')
 
-        self._value.inc(value)
+        self._backend.inc(value)
 
     # TODO: consider adding decorator support
     @contextmanager
@@ -155,14 +155,24 @@ class Counter(Metric):
 
 
 # this could be a class method, but might want to avoid it
-def create_metric(name: str, required_labels: Sequence[str] | None = None) -> Metric:
+def create_metric(
+    name: str,
+    required_labels: Sequence[str] | None = None,
+    backend_class: Optional[Backend] = None,
+    backend_config: Optional[BackendConfig] = None,
+) -> Metric:
     collector = MetricCollector(name, Metric, required_labels)
-    return Metric(collector)
+    return Metric(collector, backend_class=backend_class, backend_config=backend_config)
 
 
-def create_counter(name: str, required_labels: Sequence[str] | None = None) -> Metric:
+def create_counter(
+    name: str,
+    required_labels: Sequence[str] | None = None,
+    backend_class: Optional[Backend] = None,
+    backend_config: Optional[BackendConfig] = None,
+) -> Metric:
     collector = MetricCollector(name, Counter, required_labels)
-    return Counter(collector)
+    return Counter(collector, backend_class=backend_class, backend_config=backend_config)
 
 
 @dataclass

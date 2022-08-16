@@ -30,3 +30,68 @@ my_metric_with_label_set.labels({'req2': '2'}).inc()  # would work because it ha
 ```
 
 The way to create metrics is up to discussion, instead of a separated function it could be the class itself that creates everything with the appropriate arguments.
+
+## How to use different backends
+
+Things work out of the box, using the SingleProcessBackend:
+
+```python
+
+from pytheus.metrics import create_counter
+
+counter = create_counter(
+    name="my_metric",
+    required_labels=["label_a", "label_b"],
+)
+print(counter._backend.__class__)
+print(counter._backend.config)
+```
+
+You can define environment configuration to have different defaults, using two environment variables:
+
+- `PYTHEUS_BACKEND_CLASS`: Defines the backend class to be used.
+- `PYTHEUS_BACKEND_CONFIG`: Defines the path to a JSON file where the configuration for the backend class is specified.
+
+See this example:
+
+```python
+import json
+import os
+
+with open("./config.json", "w") as f:
+    f.write('{"config_key_1": 1}')
+
+os.environ["PYTHEUS_BACKEND_CLASS"] = "MultipleProcessFileBasedBackend"
+os.environ["PYTHEUS_BACKEND_CONFIG"] = "./config.json"
+
+from pytheus.metrics import create_counter
+from pytheus.backends import load_backend_from_env
+
+load_backend_from_env()
+
+counter = create_counter(
+    name="my_metric",
+    required_labels=["label_a", "label_b"],
+)
+print(counter._backend.__class__)
+print(counter._backend.config)
+
+os.remove("config.json")
+```
+
+You can pass the values directly at instantiation time, which overrides the environment variables:
+
+```python
+
+from pytheus.metrics import create_counter
+from pytheus.backends import MultipleProcessFileBasedBackend
+
+counter = create_counter(
+    name="my_metric",
+    required_labels=["label_a", "label_b"],
+    backend_class=MultipleProcessFileBasedBackend,
+    backend_config={"config_key_1": 45},
+)
+print(counter._backend.__class__)
+print(counter._backend.config)
+```
