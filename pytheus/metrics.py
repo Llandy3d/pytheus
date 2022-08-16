@@ -6,11 +6,7 @@ import os
 from typing import Optional, Sequence, Iterator
 
 from pytheus.backends import get_backend
-from pytheus.exceptions import PytheusException
-
-
-class UnobservableMetricException(PytheusException):
-    pass
+from pytheus.exceptions import UnobservableMetricException
 
 
 Labels = dict[str, str]

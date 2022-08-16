@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
+import importlib
 import json
 import os
 from threading import Lock
 from typing import Any, Optional, Tuple
 
-from pytheus.exceptions import PytheusException
+from pytheus.exceptions import InvalidBackendClassException, InvalidBackendConfigException
 
 BackendConfig = dict[str, Any]
 
@@ -22,15 +23,26 @@ class Backend(ABC):
         pass
 
 
-class InvalidBackendClassException(PytheusException):
-    def __init__(self, class_name: str):
-        super().__init__(
-            f"Invalid backend class '{class_name}', please use any of the following: "
-            f"{', '.join([cls.__name__ for cls in Backend.__subclasses__()])}"
+def _import_backend_class(full_import_path: str) -> Backend:
+    path_chunks = full_import_path.split(".")
+    path_chunks_length = len(path_chunks)
+    if path_chunks_length <= 1:  # Empty string or not full path to the class
+        raise InvalidBackendClassException(
+            "Backend class could not be imported. Full import path needs to be provided, e.g. "
+            "my_package.my_module.MyClass"
         )
-
-class InvalidBackendConfigException(PytheusException):
-    pass
+    module_path = ".".join(path_chunks[:-1])
+    class_name = path_chunks[-1]
+    try:
+        module = importlib.import_module(module_path)
+    except ImportError as e:
+        raise InvalidBackendClassException(f"Module '{module_path}' could not be imported: {e}")
+    try:
+        return getattr(module, class_name)
+    except AttributeError:
+        raise InvalidBackendClassException(
+            f"Class '{class_name}' could not be found in module '{module_path}'"
+        )
 
 
 def load_backend(
@@ -45,10 +57,7 @@ def load_backend(
         BACKEND_CLASS = backend_class
     elif backend_class_env_var in os.environ:  # Environment
         class_name = os.environ[backend_class_env_var]
-        try:
-            BACKEND_CLASS = globals()[class_name]
-        except KeyError:
-            raise InvalidBackendClassException(class_name)
+        BACKEND_CLASS = _import_backend_class(os.environ[backend_class_env_var])
     else:  # Default
         BACKEND_CLASS = SingleProcessBackend
 
@@ -57,7 +66,7 @@ def load_backend(
     backend_config_env_var: str = "PYTHEUS_BACKEND_CONFIG"
     if backend_config is not None:  # Explicit
         BACKEND_CONFIG = backend_config
-    if backend_config_env_var in os.environ:  # Environment
+    elif backend_config_env_var in os.environ:  # Environment
         try:
             with open(os.environ[backend_config_env_var]) as f:
                 BACKEND_CONFIG = json.loads(f.read())  # TODO: Support yaml?
