@@ -88,10 +88,10 @@ class Metric:
         self._labels = labels
         self._can_observe = self._check_can_observe()
         if backend_class is not None and backend_config is not None:
-            self._backend = backend_class(backend_config)
+            self._metric_value_backend = backend_class(backend_config)
         else:
             from pytheus.backends import DEFAULT_BACKEND_CLASS, DEFAULT_BACKEND_CONFIG
-            self._backend = DEFAULT_BACKEND_CLASS(DEFAULT_BACKEND_CONFIG)
+            self._metric_value_backend = DEFAULT_BACKEND_CLASS(DEFAULT_BACKEND_CONFIG)
 
     def _check_can_observe(self) -> bool:
         if not self._collector._required_labels:
@@ -159,7 +159,7 @@ class Counter(Metric):
         if value < 0:
             raise ValueError(f'Counter increase value ({value}) must be >= 0')
 
-        self._backend.inc(value)
+        self._metric_value_backend.inc(value)
 
     # TODO: consider adding decorator support
     @contextmanager
@@ -184,7 +184,7 @@ class Counter(Metric):
         # TODO: probably need a way to add default metric creation labels
         # ideally on Metric class initialization
         # while being careful of not messing up the tracking logic
-        return Sample('_total', self._labels, self._value.get())
+        return Sample('_total', self._labels, self._metric_value_backend.get())
 
 
 # this could be a class method, but might want to avoid it

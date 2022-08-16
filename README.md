@@ -43,8 +43,8 @@ counter = create_counter(
     name="my_metric",
     required_labels=["label_a", "label_b"],
 )
-print(counter._backend.__class__)
-print(counter._backend.config)
+print(counter._metric_value_backend.__class__)
+print(counter._metric_value_backend.config)
 ```
 
 You can define environment configuration to have different defaults, using two environment variables:
@@ -73,8 +73,8 @@ counter = create_counter(
     name="my_metric",
     required_labels=["label_a", "label_b"],
 )
-print(counter._backend.__class__)
-print(counter._backend.config)
+print(counter._metric_value_backend.__class__)
+print(counter._metric_value_backend.config)
 
 os.remove("config.json")
 ```
@@ -92,6 +92,6 @@ counter = create_counter(
     backend_class=MultipleProcessFileBasedBackend,
     backend_config={"config_key_1": 45},
 )
-print(counter._backend.__class__)
-print(counter._backend.config)
+print(counter._metric_value_backend.__class__)
+print(counter._metric_value_backend.config)
 ```

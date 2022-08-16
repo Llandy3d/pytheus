@@ -73,11 +73,11 @@ class TestCounter:
 
     def test_can_increment(self, counter):
         counter.inc()
-        assert counter._backend.get() == 1
+        assert counter._metric_value_backend.get() == 1
 
     def test_can_increment_with_value(self, counter):
         counter.inc(7.2)
-        assert counter._backend.get() == 7.2
+        assert counter._metric_value_backend.get() == 7.2
 
     def test_negative_increment_raises(self, counter):
         with pytest.raises(ValueError):
@@ -88,21 +88,21 @@ class TestCounter:
             with counter.count_exceptions():
                 raise ValueError
 
-        assert counter._backend.get() == 1
+        assert counter._metric_value_backend.get() == 1
 
     def test_count_exception_with_specified(self, counter):
         with pytest.raises(ValueError):
             with counter.count_exceptions((IndexError, ValueError)):
                 raise ValueError
 
-        assert counter._backend.get() == 1
+        assert counter._metric_value_backend.get() == 1
 
     def test_count_exception_with_specified_is_ignored(self, counter):
         with pytest.raises(ValueError):
             with counter.count_exceptions(IndexError):
                 raise ValueError
 
-        assert counter._backend.get() == 0
+        assert counter._metric_value_backend.get() == 0
 
     def test_collect_adds_correct_suffix(self, counter):
         sample = counter.collect()
