@@ -3,7 +3,7 @@ import importlib
 import json
 import os
 from threading import Lock
-from typing import Any, Optional, Tuple
+from typing import Any, Tuple
 
 from pytheus.exceptions import InvalidBackendClassException, InvalidBackendConfigException
 
@@ -12,15 +12,25 @@ BackendConfig = dict[str, Any]
 
 class Backend(ABC):
     def __init__(self, config: BackendConfig):
-        self.config = config  # TODO: We should discuss validation here (jsonschema, pydantic, etc)
+        if self.is_valid_config(config):
+            self.config = config
+        else:
+            raise InvalidBackendConfigException(
+                f"Configuration object '{config}' is not valid for the backend class "
+                f"'{self.__class__}'"
+            )
+
+    @abstractmethod
+    def is_valid_config(self, config: BackendConfig) -> True:
+        return True
 
     @abstractmethod
     def inc(self, value: float) -> None:
-        pass
+        return None
 
     @abstractmethod
     def get(self) -> float:
-        pass
+        return 0.0
 
 
 def _import_backend_class(full_import_path: str) -> Backend:
@@ -47,8 +57,8 @@ def _import_backend_class(full_import_path: str) -> Backend:
 
 
 def load_backend(
-    backend_class: Optional[Backend] = None,
-    backend_config: Optional[BackendConfig] = None,
+    backend_class: Backend | None = None,
+    backend_config: Backend | None = None,
 ):
 
     # Load default backend class
@@ -90,6 +100,9 @@ class SingleProcessBackend(Backend):
         self._value = 0.0
         self._lock = Lock()
 
+    def is_valid_config(self, config: BackendConfig) -> True:
+        return True
+
     def inc(self, value: float) -> None:
         with self._lock:
             self._value += value
@@ -102,6 +115,9 @@ class SingleProcessBackend(Backend):
 class MultipleProcessFileBackend(Backend):
     """Provides a multi-process backend that uses MMAP files."""
 
+    def is_valid_config(self, config: BackendConfig) -> True:
+        return True  # TODO
+
     def inc(self, value: float) -> None:
         pass  # TODO
 
@@ -111,6 +127,9 @@ class MultipleProcessFileBackend(Backend):
 
 class MultipleProcessRedisBackend(Backend):
     """Provides a multi-process backend that uses Redis."""
+
+    def is_valid_config(self, config: BackendConfig) -> True:
+        return True  # TODO
 
     def inc(self, value: float) -> None:
         pass  # TODO

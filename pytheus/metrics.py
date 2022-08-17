@@ -3,7 +3,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 import os
-from typing import Optional, Sequence, Iterator
+from typing import Sequence, Iterator
 
 from pytheus.backends import get_backend
 from pytheus.exceptions import UnobservableMetricException
