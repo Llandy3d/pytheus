@@ -24,21 +24,22 @@ class Backend(ABC):
 
 
 def _import_backend_class(full_import_path: str) -> Backend:
-    path_chunks = full_import_path.split(".")
-    path_chunks_length = len(path_chunks)
-    if path_chunks_length <= 1:  # Empty string or not full path to the class
+    try:
+        module_path, class_name = full_import_path.rsplit(".", 1)
+    except ValueError:  # Empty string or not full path to the class
         raise InvalidBackendClassException(
             "Backend class could not be imported. Full import path needs to be provided, e.g. "
             "my_package.my_module.MyClass"
         )
-    module_path = ".".join(path_chunks[:-1])
-    class_name = path_chunks[-1]
     try:
         module = importlib.import_module(module_path)
     except ImportError as e:
         raise InvalidBackendClassException(f"Module '{module_path}' could not be imported: {e}")
     try:
-        return getattr(module, class_name)
+        cls = getattr(module, class_name)
+        if not issubclass(cls, Backend):
+            raise InvalidBackendClassException(f"Class '{class_name}' is not a Backend subclass")
+        return cls
     except AttributeError:
         raise InvalidBackendClassException(
             f"Class '{class_name}' could not be found in module '{module_path}'"
