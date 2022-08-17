@@ -40,6 +40,7 @@ from pytheus.metrics import create_counter
 
 counter = create_counter(
     name="my_metric",
+    description="My description",
     required_labels=["label_a", "label_b"],
 )
 print(counter._metric_value_backend.__class__)
@@ -70,6 +71,7 @@ from pytheus.metrics import create_counter
 
 counter = create_counter(
     name="my_metric",
+    description="My description",
     required_labels=["label_a", "label_b"],
 )
 print(counter._metric_value_backend.__class__)
@@ -100,6 +102,7 @@ load_backend(
 
 counter = create_counter(
     name="my_metric",
+    description="My description",
     required_labels=["label_a", "label_b"],
 )
 print(counter._metric_value_backend.__class__)

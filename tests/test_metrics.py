@@ -18,7 +18,7 @@ class TestMetricCollector:
         ],
     )
     def test_name_with_correct_values(self, name):
-        MetricCollector(name, Metric)
+        MetricCollector(name, 'desc', Metric)
 
     @pytest.mark.parametrize(
         'name',
@@ -31,11 +31,11 @@ class TestMetricCollector:
     )
     def test_name_with_incorrect_values(self, name):
         with pytest.raises(ValueError):
-            MetricCollector(name, Metric)
+            MetricCollector(name, 'desc', Metric)
 
     def test_validate_label_with_correct_values(self):
         labels = ['action', 'method', '_type']
-        collector = MetricCollector('name', Metric)
+        collector = MetricCollector('name', 'desc', Metric)
         collector._validate_labels(labels)
 
     @pytest.mark.parametrize(
@@ -47,17 +47,17 @@ class TestMetricCollector:
         ],
     )
     def test_validate_label_with_incorrect_values(self, label):
-        collector = MetricCollector('name', Metric)
+        collector = MetricCollector('name', 'desc', Metric)
         with pytest.raises(ValueError):
             collector._validate_labels([label])
 
     def test_collect_without_labels(self):
-        counter = create_counter('name')
+        counter = create_counter('name', 'desc')
         samples = counter._collector.collect()
         assert len(samples) == 1
 
     def test_collect_with_labels(self):
-        counter = create_counter('name', required_labels=['a', 'b'])
+        counter = create_counter('name', 'desc', required_labels=['a', 'b'])
         counter_a = counter.labels({'a': '1', 'b': '2'})
         counter_b = counter.labels({'a': '7', 'b': '8'})
         counter_c = counter.labels({'a': '6'})  # this should not be creating a sample
@@ -69,7 +69,7 @@ class TestCounter:
 
     @pytest.fixture
     def counter(self):
-        return create_counter('name')
+        return create_counter('name', 'desc')
 
     def test_can_increment(self, counter):
         counter.inc()

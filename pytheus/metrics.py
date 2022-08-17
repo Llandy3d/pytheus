@@ -33,6 +33,7 @@ class MetricCollector:
     def __init__(
         self,
         name: str,
+        description: str,
         metric_class: type['Metric'],
         required_labels: Sequence[str] | None = None,
     ) -> None:
@@ -43,6 +44,7 @@ class MetricCollector:
             self._validate_labels(required_labels)
 
         self.name = name
+        self.description = description
         self._required_labels = set(required_labels) if required_labels else None
         self._metric = metric_class(self)
         self._labeled_metrics: dict[tuple[str, ...], Metric] = {}
@@ -136,7 +138,6 @@ class Metric:
         return f'{self.__class__.__qualname__}({self._collector.name})'
 
 
-# TODO: count exception raised
 class Counter(Metric):
 
     def inc(self, value: float = 1.0) -> None:
@@ -178,19 +179,13 @@ class Counter(Metric):
 
 
 # this could be a class method, but might want to avoid it
-def create_metric(
-    name: str,
-    required_labels: Sequence[str] | None = None,
-) -> Metric:
-    collector = MetricCollector(name, Metric, required_labels)
+def create_metric(name: str, description: str, required_labels: Sequence[str] | None = None) -> Metric:
+    collector = MetricCollector(name, description, Metric, required_labels)
     return Metric(collector)
 
 
-def create_counter(
-    name: str,
-    required_labels: Sequence[str] | None = None,
-) -> Metric:
-    collector = MetricCollector(name, Counter, required_labels)
+def create_counter(name: str, description: str, required_labels: Sequence[str] | None = None) -> Metric:
+    collector = MetricCollector(name, description, Counter, required_labels)
     return Counter(collector)
 
 
@@ -199,7 +194,3 @@ def create_counter(
 class Label:
     name: str
     value: str
-
-
-# m = MetricCollector('name', ['bbo'])
-my_metric = create_metric('name', ['bbo'])
