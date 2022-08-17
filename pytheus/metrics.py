@@ -2,9 +2,10 @@ import re
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
+import os
 from typing import Sequence, Iterator
 
-from pytheus.backends import LockedValue
+from pytheus.backends import get_backend
 from pytheus.exceptions import UnobservableMetricException
 
 
@@ -74,7 +75,6 @@ class MetricCollector:
 
 # class or function based creation ?
 class Metric:
-
     def __init__(
         self,
         collector: MetricCollector,
@@ -83,6 +83,7 @@ class Metric:
         self._collector = collector
         self._labels = labels
         self._can_observe = self._check_can_observe()
+        self._metric_value_backend = get_backend()
 
     def _check_can_observe(self) -> bool:
         if not self._collector._required_labels:
@@ -139,17 +140,6 @@ class Metric:
 
 class Counter(Metric):
 
-    def __init__(
-        self,
-        collector: MetricCollector,
-        labels: Labels | None = None,
-    ) -> None:
-        super().__init__(collector, labels)
-
-        # TODO: value should be threadsafe and possibly support different kinds :)
-        # possibly asyncio support could be considered and also multiprocessing
-        self._value: LockedValue = LockedValue()  # TODO: support multiples
-
     def inc(self, value: float = 1.0) -> None:
         """
         Increments the value by the given amount.
@@ -160,7 +150,7 @@ class Counter(Metric):
         if value < 0:
             raise ValueError(f'Counter increase value ({value}) must be >= 0')
 
-        self._value.inc(value)
+        self._metric_value_backend.inc(value)
 
     # TODO: consider adding decorator support
     @contextmanager
@@ -185,7 +175,7 @@ class Counter(Metric):
         # TODO: probably need a way to add default metric creation labels
         # ideally on Metric class initialization
         # while being careful of not messing up the tracking logic
-        return Sample('_total', self._labels, self._value.get())
+        return Sample('_total', self._labels, self._metric_value_backend.get())
 
 
 # this could be a class method, but might want to avoid it

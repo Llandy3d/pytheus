@@ -30,3 +30,83 @@ my_metric_with_label_set.labels({'req2': '2'}).inc()  # would work because it ha
 ```
 
 The way to create metrics is up to discussion, instead of a separated function it could be the class itself that creates everything with the appropriate arguments.
+
+## How to use different backends
+
+Things work out of the box, using the SingleProcessBackend:
+
+```python
+from pytheus.metrics import create_counter
+
+counter = create_counter(
+    name="my_metric",
+    description="My description",
+    required_labels=["label_a", "label_b"],
+)
+print(counter._metric_value_backend.__class__)
+# <class 'pytheus.backends.SingleProcessBackend'>
+print(counter._metric_value_backend.config)
+# {}
+```
+
+You can define environment configuration to have different defaults, using two environment variables:
+
+```bash
+export PYTHEUS_BACKEND_CLASS="pytheus.backends.MultipleProcessFileBackend"
+export PYTHEUS_BACKEND_CONFIG="./config.json"
+```
+
+Now, create the config file, `./config.json`:
+
+```json
+{
+  "pytheus_file_directory": "./"
+}
+```
+
+Now we can try the same snippet as above:
+
+```python
+from pytheus.metrics import create_counter
+
+counter = create_counter(
+    name="my_metric",
+    description="My description",
+    required_labels=["label_a", "label_b"],
+)
+print(counter._metric_value_backend.__class__)
+# <class 'pytheus.backends.MultipleProcessFileBackend'>
+print(counter._metric_value_backend.config)
+# {'pytheus_file_directory': "./"}
+```
+
+You can also pass the values directly in Python, which would take precedence over the environment
+setup we have just described:
+
+```python
+
+from pytheus.metrics import create_counter
+from pytheus.backends import MultipleProcessRedisBackend, load_backend
+
+load_backend(
+    backend_class=MultipleProcessRedisBackend,
+    backend_config={
+      "host": "127.0.0.1",
+      "port":  6379
+    }
+)
+# Notice that if you simply call load_backend(), it would reload config from the environment.
+
+# load_backend() is called automatically at package import, that's why we didn't need to call it
+# directly in the previous example
+
+counter = create_counter(
+    name="my_metric",
+    description="My description",
+    required_labels=["label_a", "label_b"],
+)
+print(counter._metric_value_backend.__class__)
+# <class 'pytheus.backends.MultipleProcessRedisBackend'>
+print(counter._metric_value_backend.config)
+# {'host': '127.0.0.1', 'port': 6379}
+```

@@ -4,3 +4,11 @@ class PytheusException(Exception):
 
 class UnobservableMetricException(PytheusException):
     pass
+
+
+class InvalidBackendClassException(PytheusException):
+    pass
+
+
+class InvalidBackendConfigException(PytheusException):
+    pass
