@@ -7,6 +7,7 @@ from typing import Sequence, Iterator
 
 from pytheus.backends import get_backend
 from pytheus.exceptions import UnobservableMetricException
+from pytheus.registry import REGISTRY_PROXY, Registry
 
 
 Labels = dict[str, str]
@@ -36,6 +37,7 @@ class MetricCollector:
         description: str,
         metric_class: type['Metric'],
         required_labels: Sequence[str] | None = None,
+        registry: Registry = REGISTRY_PROXY
     ) -> None:
         if metric_name_re.fullmatch(name) is None:
             raise ValueError(f'Invalid metric name: {name}')
@@ -48,6 +50,7 @@ class MetricCollector:
         self._required_labels = set(required_labels) if required_labels else None
         self._metric = metric_class(self)
         self._labeled_metrics: dict[tuple[str, ...], Metric] = {}
+        registry.register(self)
 
         # this will register to the collector
 
@@ -112,23 +115,18 @@ class Metric:
         if not _labels or self._collector._required_labels is None:
             return self
 
-        add_to_collector: bool = True
-
         # TODO: add labels validation
         if len(_labels) != len(self._collector._required_labels):
-            add_to_collector = False
+            # does not add to collector
+            return self.__class__(self._collector, _labels)
 
+        # add to collector
         sorted_label_values = tuple(v for _, v in sorted(_labels.items()))
-        # get or add to collector
-        if add_to_collector:
-            if sorted_label_values in self._collector._labeled_metrics:
-                metric = self._collector._labeled_metrics[sorted_label_values]
-            else:
-                metric = self.__class__(self._collector, _labels)
-                self._collector._labeled_metrics[sorted_label_values] = metric
+        if sorted_label_values in self._collector._labeled_metrics:
+            metric = self._collector._labeled_metrics[sorted_label_values]
         else:
             metric = self.__class__(self._collector, _labels)
-
+            self._collector._labeled_metrics[sorted_label_values] = metric
         return metric
 
     def collect(self) -> Sample:
