@@ -1,5 +1,9 @@
+from logging import getLogger
 from threading import Lock
 from typing import Iterable, Protocol
+
+
+logger = getLogger(__name__)
 
 
 class Collector(Protocol):
@@ -23,18 +27,20 @@ class Registry(Protocol):
 class CollectorRegistry:
     def __init__(self, prefix: str = None) -> None:
         self._lock = Lock()
-        self._prefix = prefix
+        self.prefix = prefix
         self._collectors: dict[str, Collector] = {}
 
     def register(self, collector: Collector) -> None:
         with self._lock:
             if collector.name in self._collectors:
+                logger.warning(f"collector with name '{collector.name}' already registred")
                 return
             self._collectors[collector.name] = collector
 
     def unregister(self, collector: Collector) -> None:
         with self._lock:
             if collector.name not in self._collectors:
+                logger.warning(f"no collector found with name '{collector.name}'")
                 return
             del self._collectors[collector.name]
 
