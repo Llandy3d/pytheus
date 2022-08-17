@@ -66,4 +66,4 @@ class CollectorRegistryProxy:
         return self._registry.collect()
 
 
-REGISTRY_PROXY = CollectorRegistryProxy()
+REGISTRY = CollectorRegistryProxy()

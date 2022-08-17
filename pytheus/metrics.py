@@ -7,7 +7,7 @@ from typing import Sequence, Iterator
 
 from pytheus.backends import get_backend
 from pytheus.exceptions import UnobservableMetricException
-from pytheus.registry import REGISTRY_PROXY, Registry
+from pytheus.registry import REGISTRY, Registry
 
 
 Labels = dict[str, str]
@@ -37,7 +37,7 @@ class MetricCollector:
         description: str,
         metric_class: type['Metric'],
         required_labels: Sequence[str] | None = None,
-        registry: Registry = REGISTRY_PROXY
+        registry: Registry = REGISTRY
     ) -> None:
         if metric_name_re.fullmatch(name) is None:
             raise ValueError(f'Invalid metric name: {name}')
