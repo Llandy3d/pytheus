@@ -10,18 +10,18 @@ class Collector(Protocol):
     name: str
 
     def collect(self) -> Iterable:
-        pass
+        ...
 
 
 class Registry(Protocol):
     def register(self, collector: Collector):
-        pass
+        ...
 
     def unregister(self, collector: Collector):
-        pass
+        ...
 
     def collect(self) -> Iterable:
-        pass
+        ...
 
 
 class CollectorRegistry:
