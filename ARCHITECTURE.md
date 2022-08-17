@@ -21,4 +21,6 @@ A `MetricCollector` should be able to `register()` itself into it.
 The `collect()` method will hold the logic for collecting all the metrics samples and should combine each metric name with the samples `suffixes` if present before exposing them. (This last bit might not be part of the registry directly, but of the piece that will actually work on formatting the metrics for exposure)
 
 The `RegistryProxy` will be the actual global object in the library that will just proxy all the registry calls directly to the set registry.
-This object would allow to swap the registry with the prefered user one during initialization with a `set_registry()` method, for example an `PrefixedCollectorRegistry` that would add a common prefix to each metric name. (Note: that functionality could be given directly on the `CollectorRegistry` in this library even if it's against the prometheus best practices for the sake of letting the user decide what to do without having to hack into the library)
+This object would allow to swap the registry with the prefered user one during initialization with a `set_registry()` method, for example an `PrefixedCollectorRegistry` that would add a common prefix to each metric name. (Note: that functionality could be given directly on the `CollectorRegistry`)
+
+**NOTE**: RegistryProxy could be avoided in this library, if we can make it configurable similar to the `Backends`.
