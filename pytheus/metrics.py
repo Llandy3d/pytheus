@@ -90,7 +90,6 @@ class Metric:
         self._collector = collector
         self._labels = labels
         self._can_observe = self._check_can_observe()
-        self._metric_value_backend = None
 
         if self._can_observe:
             self._metric_value_backend = get_backend(self)
@@ -164,7 +163,7 @@ class Counter(Metric):
     @contextmanager
     def count_exceptions(
         self,
-        exceptions: type[Exception] | tuple[Exception] | None = None
+        exceptions: type[Exception] | tuple[type[Exception]] | None = None
     ) -> Generator[None, None, None]:
         """
         Will count and reraise raised exceptions.
@@ -189,12 +188,16 @@ class Counter(Metric):
 
 
 # this could be a class method, but might want to avoid it
-def create_metric(name: str, description: str, required_labels: Sequence[str] | None = None) -> Metric:
+def create_metric(
+    name: str, description: str, required_labels: Sequence[str] | None = None
+) -> Metric:
     collector = _MetricCollector(name, description, Metric, required_labels)
     return Metric(collector)
 
 
-def create_counter(name: str, description: str, required_labels: Sequence[str] | None = None) -> Counter:
+def create_counter(
+    name: str, description: str, required_labels: Sequence[str] | None = None
+) -> Counter:
     collector = _MetricCollector(name, description, Counter, required_labels)
     return Counter(collector)
 

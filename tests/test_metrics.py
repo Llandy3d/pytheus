@@ -58,9 +58,9 @@ class TestMetricCollector:
 
     def test_collect_with_labels(self):
         counter = create_counter('name', 'desc', required_labels=['a', 'b'])
-        counter_a = counter.labels({'a': '1', 'b': '2'})
-        counter_b = counter.labels({'a': '7', 'b': '8'})
-        counter_c = counter.labels({'a': '6'})  # this should not be creating a sample
+        counter.labels({'a': '1', 'b': '2'})
+        counter.labels({'a': '7', 'b': '8'})
+        counter.labels({'a': '6'})  # this should not be creating a sample
         samples = counter._collector.collect()
         assert len(list(samples)) == 2
 

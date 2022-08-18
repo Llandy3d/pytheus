@@ -4,7 +4,7 @@ version = "0.0.0"
 authors = [
   { name="Llandy Riveron Del Risco", email="llandy3d@gmail.com" },
 ]
-description = "playing with metrics"
+description = "Prometheus Python client with extensibility and multiprocess capabilities"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -16,7 +16,11 @@ repository = "https://github.com/Llandy3d/pytheus"
 
 [project.optional-dependencies]
 test = [
-  "pytest >= 7.0.0",
+  "flake8 == 5.0.4",
+  "ipython == 8.4.0",
+  "mypy == 0.971",
+  "pytest == 7.1.2",
+  "pytest-cov == 3.0.0"
 ]
 
 redis = [
