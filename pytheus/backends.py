@@ -1,17 +1,27 @@
-from abc import ABC, abstractmethod
 import importlib
 import json
 import os
+
+from abc import ABC, abstractmethod
 from threading import Lock
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+import redis
 
 from pytheus.exceptions import InvalidBackendClassException, InvalidBackendConfigException
+
+
+if TYPE_CHECKING:
+    from pytheus.metrics import Metric
+
+
 
 BackendConfig = dict[str, Any]
 
 
 class Backend(ABC):
-    def __init__(self, config: BackendConfig):
+    def __init__(self, config: BackendConfig, metric: 'Metric') -> None:
+        self.metric = metric
         if self.is_valid_config(config):
             self.config = config
         else:
@@ -87,16 +97,16 @@ def load_backend(
         BACKEND_CONFIG = {}  # Default
 
 
-def get_backend() -> Backend:
+def get_backend(metric: 'Metric') -> Backend:
     # Probably ok not to cache this and allow each metric to keep its own
-    return BACKEND_CLASS(BACKEND_CONFIG)
+    return BACKEND_CLASS(BACKEND_CONFIG, metric)
 
 
 class SingleProcessBackend(Backend):
     """Provides a single-process backend that uses a thread-safe, in-memory approach."""
 
-    def __init__(self, config: BackendConfig) -> None:
-        super().__init__(config)
+    def __init__(self, config: BackendConfig, metric: 'Metric') -> None:
+        super().__init__(config, metric)
         self._value = 0.0
         self._lock = Lock()
 
@@ -128,14 +138,26 @@ class MultipleProcessFileBackend(Backend):
 class MultipleProcessRedisBackend(Backend):
     """Provides a multi-process backend that uses Redis."""
 
+    CONNECTION_POOL: redis.Redis = None
+
+    def __init__(self, config: BackendConfig, metric: 'Metric') -> None:
+        super().__init__(config, metric)
+        self.key_name = self.metric._collector.name  # TODO: labels? maybe use a hash for labels metrics?
+        if self.CONNECTION_POOL is None:
+            MultipleProcessRedisBackend.CONNECTION_POOL = redis.Redis(
+                **config,
+                decode_responses=True,
+            )
+
     def is_valid_config(self, config: BackendConfig) -> True:
         return True  # TODO
 
     def inc(self, value: float) -> None:
-        pass  # TODO
+        self.CONNECTION_POOL.incrbyfloat(self.key_name, value)
 
     def get(self) -> float:
-        pass  # TODO
+        value = self.CONNECTION_POOL.get(self.key_name)
+        return float(value) if value else 0.0
 
 
 BACKEND_CLASS: Backend
