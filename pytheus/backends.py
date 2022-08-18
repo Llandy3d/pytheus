@@ -3,7 +3,7 @@ import importlib
 import json
 import os
 from threading import Lock
-from typing import Any, Tuple
+from typing import Any
 
 from pytheus.exceptions import InvalidBackendClassException, InvalidBackendConfigException
 
