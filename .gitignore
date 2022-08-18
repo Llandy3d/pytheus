@@ -1,6 +1,8 @@
 __pycache__
+.coverage
 .pyc
 venv
 *.egg-info
 dist
+build
 .python-version

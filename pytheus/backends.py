@@ -4,15 +4,14 @@ import os
 
 from abc import ABC, abstractmethod
 from threading import Lock
-from typing import Any, TYPE_CHECKING
-
-import redis
+from typing import Any, Type, TYPE_CHECKING
 
 from pytheus.exceptions import InvalidBackendClassException, InvalidBackendConfigException
 
 
 if TYPE_CHECKING:
     from pytheus.metrics import Metric
+    import redis
 
 
 BackendConfig = dict[str, Any]
@@ -30,7 +29,7 @@ class Backend(ABC):
             )
 
     @abstractmethod
-    def is_valid_config(self, config: BackendConfig) -> True:
+    def is_valid_config(self, config: BackendConfig) -> bool:
         return True
 
     @abstractmethod
@@ -42,7 +41,7 @@ class Backend(ABC):
         return 0.0
 
 
-def _import_backend_class(full_import_path: str) -> Backend:
+def _import_backend_class(full_import_path: str) -> Type[Backend]:
     try:
         module_path, class_name = full_import_path.rsplit(".", 1)
     except ValueError:  # Empty string or not full path to the class
@@ -66,8 +65,8 @@ def _import_backend_class(full_import_path: str) -> Backend:
 
 
 def load_backend(
-    backend_class: Backend | None = None,
-    backend_config: Backend | None = None,
+    backend_class: Type[Backend] | None = None,
+    backend_config: BackendConfig | None = None,
 ):
 
     # Load default backend class
@@ -76,7 +75,6 @@ def load_backend(
     if backend_class is not None:  # Explicit
         BACKEND_CLASS = backend_class
     elif backend_class_env_var in os.environ:  # Environment
-        class_name = os.environ[backend_class_env_var]
         BACKEND_CLASS = _import_backend_class(os.environ[backend_class_env_var])
     else:  # Default
         BACKEND_CLASS = SingleProcessBackend
@@ -97,6 +95,7 @@ def load_backend(
 
 
 def get_backend(metric: 'Metric') -> Backend:
+    global BACKEND_CLASS, BACKEND_CONFIG
     # Probably ok not to cache this and allow each metric to keep its own
     return BACKEND_CLASS(BACKEND_CONFIG, metric)
 
@@ -109,7 +108,7 @@ class SingleProcessBackend(Backend):
         self._value = 0.0
         self._lock = Lock()
 
-    def is_valid_config(self, config: BackendConfig) -> True:
+    def is_valid_config(self, config: BackendConfig) -> bool:
         return True
 
     def inc(self, value: float) -> None:
@@ -124,7 +123,7 @@ class SingleProcessBackend(Backend):
 class MultipleProcessFileBackend(Backend):
     """Provides a multi-process backend that uses MMAP files."""
 
-    def is_valid_config(self, config: BackendConfig) -> True:
+    def is_valid_config(self, config: BackendConfig) -> bool:
         return True  # TODO
 
     def inc(self, value: float) -> None:
@@ -144,7 +143,7 @@ class MultipleProcessRedisBackend(Backend):
     Note: currently not expiring keys
     """
 
-    CONNECTION_POOL: redis.Redis = None
+    CONNECTION_POOL: "redis.Redis"
 
     def __init__(self, config: BackendConfig, metric: 'Metric') -> None:
         super().__init__(config, metric)
@@ -153,7 +152,9 @@ class MultipleProcessRedisBackend(Backend):
         if self.metric._labels:
             self._labels_hash = '-'.join(sorted(self.metric._labels.values()))
 
-        if self.CONNECTION_POOL is None:
+        import redis
+
+        if getattr(self.__class__, "CONNECTION_POOL", None) is None:
             MultipleProcessRedisBackend.CONNECTION_POOL = redis.Redis(
                 **config,
                 decode_responses=True,
@@ -176,5 +177,5 @@ class MultipleProcessRedisBackend(Backend):
         return float(value) if value else 0.0
 
 
-BACKEND_CLASS: Backend
+BACKEND_CLASS: Type[Backend]
 BACKEND_CONFIG: BackendConfig
