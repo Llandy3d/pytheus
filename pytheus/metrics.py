@@ -24,7 +24,7 @@ class Sample:
     value: float
 
 
-class MetricCollector:
+class _MetricCollector:
     """
     #TODO
 
@@ -80,7 +80,7 @@ class MetricCollector:
 class Metric:
     def __init__(
         self,
-        collector: MetricCollector,
+        collector: _MetricCollector,
         labels: Labels | None = None,
     ) -> None:
         self._collector = collector
@@ -186,12 +186,12 @@ class Counter(Metric):
 
 # this could be a class method, but might want to avoid it
 def create_metric(name: str, description: str, required_labels: Sequence[str] | None = None) -> Metric:
-    collector = MetricCollector(name, description, Metric, required_labels)
+    collector = _MetricCollector(name, description, Metric, required_labels)
     return Metric(collector)
 
 
 def create_counter(name: str, description: str, required_labels: Sequence[str] | None = None) -> Metric:
-    collector = MetricCollector(name, description, Counter, required_labels)
+    collector = _MetricCollector(name, description, Counter, required_labels)
     return Counter(collector)
 
 
