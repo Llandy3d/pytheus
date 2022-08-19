@@ -1,8 +1,10 @@
+import os
 from typing import Callable
+
 from pytheus.metrics import Labels
 from pytheus.registry import REGISTRY, Collector, Registry
 
-LINE_SEPARATOR = "\n"
+LINE_SEPARATOR = os.linesep
 LABEL_SEPARATOR = ","
 PROMETHEUS_CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
 
@@ -11,16 +13,17 @@ def generate_metrics(registry: Registry = REGISTRY) -> str:
     """
     Returns the metrics from the registry in prometheus text format
     """
-    output = [
+    lines = (
         generate_from_collector(collector, registry.prefix)
         for collector in registry.collect()
-    ]
-    output.append("") # EOF
-    return LINE_SEPARATOR.join(output)
+    )
+    output = LINE_SEPARATOR.join(lines)
+    output += "\n"
+    return output
 
 
 def format_labels(labels: Labels) -> str:
-    label_str = [f'{name}="{value}"' for name, value in labels.items()]
+    label_str = (f'{name}="{value}"' for name, value in labels.items())
     return f"{{{LABEL_SEPARATOR.join(label_str)}}}"
 
 
