@@ -55,6 +55,7 @@ class _MetricCollector:
 
     @property
     def type_(self) -> str:
+        # TODO check maybe a proper MetricTypes should to be defined
         return str.lower(self._metric.__class__.__name__)
 
     def _validate_labels(self, labels: Sequence[str]):
