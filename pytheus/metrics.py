@@ -103,7 +103,6 @@ class Metric:
             # TODO: custom exceptions required
             return False
 
-        # TODO: allow partial labels
         return True
 
     def _raise_if_cannot_observe(self) -> None:
@@ -111,12 +110,16 @@ class Metric:
         if not self._can_observe:
             raise UnobservableMetricException
 
-    # TODO: calling labels again should keep previous labels by default
-    # allowing for partial labels
     # TODO: also consider adding default labels directly on the collector as well
     def labels(self, _labels: Labels) -> 'Metric':
         if not _labels or self._collector._required_labels is None:
             return self
+
+        # TODO: when testing rewrite in a better way
+        if self._labels:
+            new_labels = self._labels.copy()
+            new_labels.update(_labels)
+            _labels = new_labels
 
         # TODO: add labels validation
         if len(_labels) != len(self._collector._required_labels):
