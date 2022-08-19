@@ -2,7 +2,6 @@ import re
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-import os
 from typing import Sequence, Iterator
 
 from pytheus.backends import get_backend
@@ -53,6 +52,10 @@ class MetricCollector:
         registry.register(self)
 
         # this will register to the collector
+
+    @property
+    def type_(self) -> str:
+        return str.lower(self._metric.__class__.__name__)
 
     def _validate_labels(self, labels: Sequence[str]):
         """
@@ -182,7 +185,7 @@ def create_metric(name: str, description: str, required_labels: Sequence[str] | 
     return Metric(collector)
 
 
-def create_counter(name: str, description: str, required_labels: Sequence[str] | None = None) -> Metric:
+def create_counter(name: str, description: str, required_labels: Sequence[str] | None = None) -> Counter:
     collector = MetricCollector(name, description, Counter, required_labels)
     return Counter(collector)
 
