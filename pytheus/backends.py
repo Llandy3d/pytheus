@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from pytheus.metrics import Metric
 
 
-
 BackendConfig = dict[str, Any]
 
 
