@@ -23,7 +23,7 @@ class Sample:
     value: float
 
 
-class MetricCollector:
+class _MetricCollector:
     """
     #TODO
 
@@ -83,13 +83,16 @@ class MetricCollector:
 class Metric:
     def __init__(
         self,
-        collector: MetricCollector,
+        collector: _MetricCollector,
         labels: Labels | None = None,
     ) -> None:
         self._collector = collector
         self._labels = labels
         self._can_observe = self._check_can_observe()
-        self._metric_value_backend = get_backend()
+        self._metric_value_backend = None
+
+        if self._can_observe:
+            self._metric_value_backend = get_backend(self)
 
     def _check_can_observe(self) -> bool:
         if not self._collector._required_labels:
@@ -103,7 +106,6 @@ class Metric:
             # TODO: custom exceptions required
             return False
 
-        # TODO: allow partial labels
         return True
 
     def _raise_if_cannot_observe(self) -> None:
@@ -111,12 +113,16 @@ class Metric:
         if not self._can_observe:
             raise UnobservableMetricException
 
-    # TODO: calling labels again should keep previous labels by default
-    # allowing for partial labels
     # TODO: also consider adding default labels directly on the collector as well
     def labels(self, _labels: Labels) -> 'Metric':
         if not _labels or self._collector._required_labels is None:
             return self
+
+        # TODO: when testing rewrite in a better way
+        if self._labels:
+            new_labels = self._labels.copy()
+            new_labels.update(_labels)
+            _labels = new_labels
 
         # TODO: add labels validation
         if len(_labels) != len(self._collector._required_labels):
@@ -163,6 +169,7 @@ class Counter(Metric):
         Will count and reraise raised exceptions.
         It is possibly to specify which exceptions to track.
         """
+        self._raise_if_cannot_observe()
         if exceptions is None:
             exceptions = Exception
 
@@ -173,6 +180,7 @@ class Counter(Metric):
             raise
 
     def collect(self) -> Sample:
+        self._raise_if_cannot_observe()
         # TODO: probably need a way to add default metric creation labels
         # ideally on Metric class initialization
         # while being careful of not messing up the tracking logic
@@ -181,12 +189,12 @@ class Counter(Metric):
 
 # this could be a class method, but might want to avoid it
 def create_metric(name: str, description: str, required_labels: Sequence[str] | None = None) -> Metric:
-    collector = MetricCollector(name, description, Metric, required_labels)
+    collector = _MetricCollector(name, description, Metric, required_labels)
     return Metric(collector)
 
 
 def create_counter(name: str, description: str, required_labels: Sequence[str] | None = None) -> Counter:
-    collector = MetricCollector(name, description, Counter, required_labels)
+    collector = _MetricCollector(name, description, Counter, required_labels)
     return Counter(collector)
 
 

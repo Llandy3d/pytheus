@@ -18,3 +18,7 @@ repository = "https://github.com/Llandy3d/pytheus"
 test = [
   "pytest >= 7.0.0",
 ]
+
+redis = [
+  "redis >= 4.0.0",
+]

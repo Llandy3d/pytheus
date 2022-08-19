@@ -4,3 +4,6 @@ venv
 *.egg-info
 dist
 .python-version
+.pytest_cache
+.mypy_cache
+build
