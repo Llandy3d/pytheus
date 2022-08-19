@@ -1,19 +1,25 @@
 from logging import getLogger
 from threading import Lock
-from typing import Iterable, Protocol
-
+from typing import Iterable, Optional, Protocol
 
 logger = getLogger(__name__)
 
 
 class Collector(Protocol):
     name: str
+    description: str
 
     def collect(self) -> Iterable:
         ...
 
+    @property
+    def type_(self) -> str:
+        ...
+
 
 class Registry(Protocol):
+    prefix: str | None
+
     def register(self, collector: Collector):
         ...
 
@@ -44,17 +50,18 @@ class CollectorRegistry:
                 return
             del self._collectors[collector.name]
 
-    def collect(self) -> Iterable:
-        for collector in self._collectors.values():
-            yield from collector.collect()
+    def collect(self) -> Iterable[Collector]:
+        yield from self._collectors.values()
 
 
 class CollectorRegistryProxy:
     def __init__(self, registry: Registry = None) -> None:
         self._registry = registry or CollectorRegistry()
+        self.prefix = self._registry.prefix
 
     def set_registry(self, registry: Registry) -> None:
         self._registry = registry
+        self.prefix = self._registry.prefix
 
     def register(self, collector: Collector) -> None:
         self._registry.register(collector)
