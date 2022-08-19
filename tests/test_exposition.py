@@ -1,13 +1,15 @@
-import pytest
+import os
 
 from pytheus.exposition import generate_metrics
 from pytheus.metrics import create_counter
-from pytheus.registry import REGISTRY, CollectorRegistry
+from pytheus import registry
+from pytheus.registry import REGISTRY_CONFIG_ENV, _default_registry
 
 
 class TestExposition:
 
     def setup_counters(self):
+        registry.REGISTRY._collectors = {}
         c = create_counter("http_req", "metric desc", required_labels=["p", "m"])
         c.labels({"p": "p1", "m": "m1"}).inc(3)
         c.labels({"p": "p2", "m": "m2"}).inc(1)
@@ -29,8 +31,8 @@ class TestExposition:
         )
 
     def test_generate_metrics_with_prefix(self):
-        registry = CollectorRegistry(prefix="testing")
-        REGISTRY.set_registry(registry)
+        os.environ[REGISTRY_CONFIG_ENV] = '{"prefix":"testing"}'
+        registry.REGISTRY = _default_registry()
         self.setup_counters()
         metrics_text = generate_metrics()
         assert metrics_text == (
