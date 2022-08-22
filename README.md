@@ -17,7 +17,15 @@ Experimenting with a different way of creating prometheus metrics in python:
 
 ---
 
-Partial labels support:
+**Install**
+
+```
+pip install pytheus
+```
+
+---
+
+**Partial labels support:**
 
 ```python
 from pytheus.metrics import create_counter
@@ -35,7 +43,13 @@ observable_my_metric = partial_my_metric.labels({'req2': '2'}).inc()  # finish s
 
 ```
 
-The way to create metrics is up to discussion, instead of a separated function it could be the class itself that creates everything with the appropriate arguments.
+---
+
+**Exposing metrics:**
+
+You can use the `generate_metrics` function from `pytheus.exposition` to generate the metrics and serve them as an endpoint with your favourite web framework.
+
+Alternatively you can use the `make_wsgi_app` function that creates a simple wsgi app to serve the metrics.
 
 ## How to use different backends
 
