@@ -23,6 +23,13 @@ Experimenting with a different way of creating prometheus metrics in python:
 pip install pytheus
 ```
 
+*NOTE:* Currently you need the redis library installed but the requirement will be removed soon.
+```python
+pip install redis
+# or
+pip install pytheus[redis]
+```
+
 ---
 
 **Partial labels support:**
