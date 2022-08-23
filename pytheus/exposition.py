@@ -22,7 +22,9 @@ def generate_metrics(registry: Registry = REGISTRY) -> str:
     return output
 
 
-def format_labels(labels: Labels) -> str:
+def format_labels(labels: Labels | None) -> str:
+    if not labels:
+        return ''
     label_str = (f'{name}="{value}"' for name, value in labels.items())
     return f"{{{LABEL_SEPARATOR.join(label_str)}}}"
 
@@ -37,8 +39,8 @@ def generate_from_collector(collector: Collector, prefix: str = None) -> str:
     output = [help_text, type_text]
 
     for sample in collector.collect():
-        labelstr = format_labels(sample.labels)
-        metric = f"{metric_name}{sample.suffix}{labelstr} {sample.value}"
+        label_str = format_labels(sample.labels)
+        metric = f"{metric_name}{sample.suffix}{label_str} {sample.value}"
         output.append(metric)
     return LINE_SEPARATOR.join(output)
 
