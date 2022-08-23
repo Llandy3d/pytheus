@@ -196,7 +196,7 @@ def create_metric(name: str, description: str, required_labels: Sequence[str] | 
 
 def create_counter(name: str, description: str, required_labels: Sequence[str] | None = None) -> Counter:
     collector = _MetricCollector(name, description, Counter, required_labels)
-    return Counter(collector)
+    return collector._metric
 
 
 # maybe just go with the typing alias
