@@ -1,18 +1,23 @@
 import os
 from typing import Callable
 
+from pytheus import registry as internal_regisry
 from pytheus.metrics import Labels
-from pytheus.registry import REGISTRY, Collector, Registry
+from pytheus.registry import Collector, Registry
 
 LINE_SEPARATOR = os.linesep
 LABEL_SEPARATOR = ","
 PROMETHEUS_CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
 
 
-def generate_metrics(registry: Registry = REGISTRY) -> str:
+def generate_metrics(registry: Registry = None) -> str:
     """
     Returns the metrics from the registry in prometheus text format
     """
+
+    if not registry:
+        registry = internal_regisry.REGISTRY
+
     lines = (
         generate_from_collector(collector, registry.prefix)
         for collector in registry.collect()
@@ -45,8 +50,10 @@ def generate_from_collector(collector: Collector, prefix: str = None) -> str:
     return LINE_SEPARATOR.join(output)
 
 
-def make_wsgi_app(registry: Registry = REGISTRY) -> Callable:
+def make_wsgi_app(registry: Registry = None) -> Callable:
     """Create a WSGI app which serves the metrics from a registry."""
+    if not registry:
+        registry = internal_regisry.REGISTRY
 
     def prometheus_app(environ, start_response):
         status = '200 OK'

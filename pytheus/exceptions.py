@@ -12,3 +12,11 @@ class InvalidBackendClassException(PytheusException):
 
 class InvalidBackendConfigException(PytheusException):
     pass
+
+
+class InvalidRegistryClassException(PytheusException):
+    pass
+
+
+class InvalidRegistryConfigException(PytheusException):
+    pass

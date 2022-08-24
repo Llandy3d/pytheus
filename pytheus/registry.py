@@ -1,10 +1,18 @@
+import json
+import os
 from logging import getLogger
 from threading import Lock
-from typing import Iterable, Optional, Protocol
+from typing import Iterable, Protocol, runtime_checkable
+
+from pytheus.exceptions import (
+    InvalidRegistryClassException,
+    InvalidRegistryConfigException,
+)
+from pytheus.utils import import_object_from_path
 
 logger = getLogger(__name__)
 
-
+@runtime_checkable
 class Collector(Protocol):
     name: str
     description: str
@@ -16,7 +24,7 @@ class Collector(Protocol):
     def type_(self) -> str:
         ...
 
-
+@runtime_checkable
 class Registry(Protocol):
     prefix: str | None
 
@@ -54,23 +62,24 @@ class CollectorRegistry:
         yield from self._collectors.values()
 
 
-class CollectorRegistryProxy:
-    def __init__(self, registry: Registry = None) -> None:
-        self._registry = registry or CollectorRegistry()
-        self.prefix = self._registry.prefix
+REGISTRY_CLASS_ENV: str = "PYTHEUS_REGISTRY_CLASS"
+REGISTRY_CONFIG_ENV: str = "PYTHEUS_REGISTRY_CONFIG"
 
-    def set_registry(self, registry: Registry) -> None:
-        self._registry = registry
-        self.prefix = self._registry.prefix
+def _default_registry():
+    registry_cls = CollectorRegistry
+    registry_config = {}
+    if REGISTRY_CLASS_ENV in os.environ:
+        class_path = os.environ[REGISTRY_CLASS_ENV]
+        try:
+            registry_cls = import_object_from_path(class_path)
+        except (ValueError, ImportError, AttributeError):
+            raise InvalidRegistryClassException(f"{class_path}: path invalid or does not exist")
+        # TODO check issubclass of Registry protocol
+    if REGISTRY_CONFIG_ENV in os.environ:
+        try:
+            registry_config = json.loads(os.environ[REGISTRY_CONFIG_ENV])
+        except json.JSONDecodeError:
+            raise InvalidRegistryConfigException("expected json data")
+    return registry_cls(**registry_config)
 
-    def register(self, collector: Collector) -> None:
-        self._registry.register(collector)
-
-    def unregister(self, collector: Collector) -> None:
-        self._registry.unregister(collector)
-
-    def collect(self) -> Iterable:
-        return self._registry.collect()
-
-
-REGISTRY = CollectorRegistryProxy()
+REGISTRY = _default_registry()
