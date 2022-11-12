@@ -1,19 +1,19 @@
 import pytest
 
 from pytheus.exposition import generate_metrics
-from pytheus.metrics import create_counter
+from pytheus.metrics import Counter
 from pytheus.registry import REGISTRY, CollectorRegistry
 
 
 class TestExposition:
 
     def setup_counters(self):
-        c = create_counter("http_req", "metric desc", required_labels=["p", "m"])
+        c = Counter("http_req", "metric desc", required_labels=["p", "m"])
         c.labels({"p": "p1", "m": "m1"}).inc(3)
         c.labels({"p": "p2", "m": "m2"}).inc(1)
-        c = create_counter("cache_hits", "cache desc", required_labels=["name"])
+        c = Counter("cache_hits", "cache desc", required_labels=["name"])
         c.labels({"name": "redis"}).inc(5)
-        c = create_counter("exception", "expection desc")
+        c = Counter("exception", "expection desc")
         c.inc(4)
 
     def test_generate_metrics(self):

@@ -1,6 +1,6 @@
 import pytest
 
-from pytheus.metrics import _MetricCollector, Metric, create_counter
+from pytheus.metrics import _MetricCollector, Metric, Counter
 
 
 class TestMetricCollector:
@@ -52,24 +52,35 @@ class TestMetricCollector:
             collector._validate_labels([label])
 
     def test_collect_without_labels(self):
-        counter = create_counter('name', 'desc')
+        counter = Counter('name', 'desc')
         samples = counter._collector.collect()
         assert len(samples) == 1
 
     def test_collect_with_labels(self):
-        counter = create_counter('name', 'desc', required_labels=['a', 'b'])
+        counter = Counter('name', 'desc', required_labels=['a', 'b'])
         counter_a = counter.labels({'a': '1', 'b': '2'})
         counter_b = counter.labels({'a': '7', 'b': '8'})
         counter_c = counter.labels({'a': '6'})  # this should not be creating a sample
         samples = counter._collector.collect()
         assert len(list(samples)) == 2
 
+    def test_collector_created_on_metric_creation(self):
+        counter = Counter('name', 'desc', required_labels=['a', 'b'])
+        assert counter._collector.name == 'name'
+        assert counter._collector.description == 'desc'
+        assert counter._collector._required_labels == {'a', 'b'}
+
+    def test_collector_reused_on_new_metric_instance(self):
+        counter = Counter('name', 'desc', required_labels=['a', 'b'])
+        counter_instance = Counter('name', 'desc', collector=counter._collector)
+        assert counter._collector is counter_instance._collector
+
 
 class TestCounter:
 
     @pytest.fixture
     def counter(self):
-        return create_counter('name', 'desc')
+        return Counter('name', 'desc')
 
     def test_can_increment(self, counter):
         counter.inc()

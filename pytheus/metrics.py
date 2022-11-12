@@ -34,7 +34,8 @@ class _MetricCollector:
         self,
         name: str,
         description: str,
-        metric_class: type['Metric'],
+        # metric_class: type['Metric'],
+        metric: 'Metric',
         required_labels: Sequence[str] | None = None,
         registry: Registry = REGISTRY
     ) -> None:
@@ -47,7 +48,7 @@ class _MetricCollector:
         self.name = name
         self.description = description
         self._required_labels = set(required_labels) if required_labels else None
-        self._metric = metric_class(self)
+        self._metric = metric
         self._labeled_metrics: dict[tuple[str, ...], Metric] = {}
         registry.register(self)
 
@@ -80,17 +81,25 @@ class _MetricCollector:
             return (self._metric.collect(),)
 
 
-# class or function based creation ?
 class Metric:
     def __init__(
         self,
-        collector: _MetricCollector,
+        name: str,
+        description: str,
+        required_labels: Sequence[str] | None = None,
         labels: Labels | None = None,
+        collector: _MetricCollector | None = None,
     ) -> None:
-        self._collector = collector
+        self._name = name
+        self._description = description
         self._labels = labels
-        self._can_observe = self._check_can_observe()
         self._metric_value_backend = None
+        self._collector = (
+            collector
+            if collector
+            else _MetricCollector(name, description, self, required_labels)
+        )
+        self._can_observe = self._check_can_observe()
 
         if self._can_observe:
             self._metric_value_backend = get_backend(self)
@@ -128,14 +137,24 @@ class Metric:
         # TODO: add labels validation
         if len(_labels) != len(self._collector._required_labels):
             # does not add to collector
-            return self.__class__(self._collector, _labels)
+            return self.__class__(
+                self._name,
+                self._description,
+                collector=self._collector,
+                labels=_labels
+            )
 
         # add to collector
         sorted_label_values = tuple(v for _, v in sorted(_labels.items()))
         if sorted_label_values in self._collector._labeled_metrics:
             metric = self._collector._labeled_metrics[sorted_label_values]
         else:
-            metric = self.__class__(self._collector, _labels)
+            metric = self.__class__(
+                self._name,
+                self._description,
+                collector=self._collector,
+                labels=_labels
+            )
             self._collector._labeled_metrics[sorted_label_values] = metric
         return metric
 
@@ -176,7 +195,7 @@ class Counter(Metric):
 
         try:
             yield
-        except exceptions:
+        except exceptions:  # type: ignore
             self.inc()
             raise
 
@@ -186,17 +205,6 @@ class Counter(Metric):
         # ideally on Metric class initialization
         # while being careful of not messing up the tracking logic
         return Sample('_total', self._labels, self._metric_value_backend.get())
-
-
-# this could be a class method, but might want to avoid it
-def create_metric(name: str, description: str, required_labels: Sequence[str] | None = None) -> Metric:
-    collector = _MetricCollector(name, description, Metric, required_labels)
-    return Metric(collector)
-
-
-def create_counter(name: str, description: str, required_labels: Sequence[str] | None = None) -> Counter:
-    collector = _MetricCollector(name, description, Counter, required_labels)
-    return collector._metric
 
 
 # maybe just go with the typing alias
