@@ -76,6 +76,40 @@ class TestMetricCollector:
         assert counter._collector is counter_instance._collector
 
 
+class TestMetric:
+
+    def test_create_metric(self):
+        metric = _Metric('name', 'desc')
+        assert metric._name == 'name'
+        assert metric._description == 'desc'
+
+    def test_create_metric_with_required_labels(self):
+        required_labels = ['bob', 'cat']
+        metric = _Metric('name', 'desc', required_labels=required_labels)
+        assert metric._collector._required_labels == set(required_labels)
+
+    def test_create_metric_with_labels(self):
+        labels = ['bob', 'cat']
+        metric = _Metric('name', 'desc', labels=labels)
+        assert metric._labels == labels
+
+    def test_check_can_observe_without_required_labels(self):
+        metric = _Metric('name', 'desc')
+        assert metric._check_can_observe() is True
+
+    def test_check_can_observe_with_required_labels_without_labels(self):
+        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'])
+        assert metric._check_can_observe() is False
+
+    def test_check_can_observe_with_required_labels_with_partial_labels(self):
+        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], labels=['bob'])
+        assert metric._check_can_observe() is False
+
+    def test_check_can_observe_with_required_labels_with_labels(self):
+        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], labels=['bob', 'cat'])
+        assert metric._check_can_observe() is True
+
+
 class TestCounter:
 
     @pytest.fixture
