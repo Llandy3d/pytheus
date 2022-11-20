@@ -1,5 +1,6 @@
 import pytest
 
+from pytheus.exceptions import UnobservableMetricException
 from pytheus.metrics import _MetricCollector, _Metric, Counter
 
 
@@ -108,6 +109,15 @@ class TestMetric:
     def test_check_can_observe_with_required_labels_with_labels(self):
         metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], labels=['bob', 'cat'])
         assert metric._check_can_observe() is True
+
+    def test_raises_if_cannot_be_observed_observable(self):
+        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], labels=['bob', 'cat'])
+        metric._raise_if_cannot_observe()
+
+    def test_raises_if_cannot_be_observed_unobservable(self):
+        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], labels=['bob'])
+        with pytest.raises(UnobservableMetricException):
+            metric._raise_if_cannot_observe()
 
 
 class TestCounter:
