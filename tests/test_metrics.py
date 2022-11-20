@@ -1,6 +1,6 @@
 import pytest
 
-from pytheus.metrics import _MetricCollector, Metric, Counter
+from pytheus.metrics import _MetricCollector, _Metric, Counter
 
 
 class TestMetricCollector:
@@ -18,7 +18,7 @@ class TestMetricCollector:
         ],
     )
     def test_name_with_correct_values(self, name):
-        _MetricCollector(name, 'desc', Metric)
+        _MetricCollector(name, 'desc', _Metric)
 
     @pytest.mark.parametrize(
         'name',
@@ -31,11 +31,11 @@ class TestMetricCollector:
     )
     def test_name_with_incorrect_values(self, name):
         with pytest.raises(ValueError):
-            _MetricCollector(name, 'desc', Metric)
+            _MetricCollector(name, 'desc', _Metric)
 
     def test_validate_label_with_correct_values(self):
         labels = ['action', 'method', '_type']
-        collector = _MetricCollector('name', 'desc', Metric)
+        collector = _MetricCollector('name', 'desc', _Metric)
         collector._validate_labels(labels)
 
     @pytest.mark.parametrize(
@@ -47,7 +47,7 @@ class TestMetricCollector:
         ],
     )
     def test_validate_label_with_incorrect_values(self, label):
-        collector = _MetricCollector('name', 'desc', Metric)
+        collector = _MetricCollector('name', 'desc', _Metric)
         with pytest.raises(ValueError):
             collector._validate_labels([label])
 

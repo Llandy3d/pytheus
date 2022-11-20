@@ -12,14 +12,14 @@ from pytheus.exceptions import InvalidBackendClassException, InvalidBackendConfi
 
 
 if TYPE_CHECKING:
-    from pytheus.metrics import Metric
+    from pytheus.metrics import _Metric
 
 
 BackendConfig = dict[str, Any]
 
 
 class Backend(ABC):
-    def __init__(self, config: BackendConfig, metric: 'Metric') -> None:
+    def __init__(self, config: BackendConfig, metric: '_Metric') -> None:
         self.metric = metric
         if self.is_valid_config(config):
             self.config = config
@@ -96,7 +96,7 @@ def load_backend(
         BACKEND_CONFIG = {}  # Default
 
 
-def get_backend(metric: 'Metric') -> Backend:
+def get_backend(metric: '_Metric') -> Backend:
     # Probably ok not to cache this and allow each metric to keep its own
     return BACKEND_CLASS(BACKEND_CONFIG, metric)
 
@@ -104,7 +104,7 @@ def get_backend(metric: 'Metric') -> Backend:
 class SingleProcessBackend(Backend):
     """Provides a single-process backend that uses a thread-safe, in-memory approach."""
 
-    def __init__(self, config: BackendConfig, metric: 'Metric') -> None:
+    def __init__(self, config: BackendConfig, metric: '_Metric') -> None:
         super().__init__(config, metric)
         self._value = 0.0
         self._lock = Lock()
@@ -146,7 +146,7 @@ class MultipleProcessRedisBackend(Backend):
 
     CONNECTION_POOL: redis.Redis = None
 
-    def __init__(self, config: BackendConfig, metric: 'Metric') -> None:
+    def __init__(self, config: BackendConfig, metric: '_Metric') -> None:
         super().__init__(config, metric)
         self._key_name = self.metric._collector.name
         self._labels_hash = None

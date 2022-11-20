@@ -35,7 +35,7 @@ class _MetricCollector:
         name: str,
         description: str,
         # metric_class: type['Metric'],
-        metric: 'Metric',
+        metric: '_Metric',
         required_labels: Sequence[str] | None = None,
         registry: Registry = REGISTRY
     ) -> None:
@@ -49,7 +49,7 @@ class _MetricCollector:
         self.description = description
         self._required_labels = set(required_labels) if required_labels else None
         self._metric = metric
-        self._labeled_metrics: dict[tuple[str, ...], Metric] = {}
+        self._labeled_metrics: dict[tuple[str, ...], _Metric] = {}
         registry.register(self)
 
         # this will register to the collector
@@ -81,7 +81,7 @@ class _MetricCollector:
             return (self._metric.collect(),)
 
 
-class Metric:
+class _Metric:
     def __init__(
         self,
         name: str,
@@ -124,7 +124,7 @@ class Metric:
             raise UnobservableMetricException
 
     # TODO: also consider adding default labels directly on the collector as well
-    def labels(self, _labels: Labels) -> 'Metric':
+    def labels(self, _labels: Labels) -> '_Metric':
         if not _labels or self._collector._required_labels is None:
             return self
 
@@ -165,7 +165,7 @@ class Metric:
         return f'{self.__class__.__qualname__}({self._collector.name})'
 
 
-class Counter(Metric):
+class Counter(_Metric):
 
     def inc(self, value: float = 1.0) -> None:
         """
@@ -202,7 +202,7 @@ class Counter(Metric):
     def collect(self) -> Sample:
         self._raise_if_cannot_observe()
         # TODO: probably need a way to add default metric creation labels
-        # ideally on Metric class initialization
+        # ideally on _Metric class initialization
         # while being careful of not messing up the tracking logic
         return Sample('_total', self._labels, self._metric_value_backend.get())
 
