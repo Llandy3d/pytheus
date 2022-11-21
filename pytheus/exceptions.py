@@ -12,3 +12,7 @@ class InvalidBackendClassException(PytheusException):
 
 class InvalidBackendConfigException(PytheusException):
     pass
+
+
+class LabelValidationException(PytheusException):
+    pass

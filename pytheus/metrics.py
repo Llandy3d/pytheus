@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Sequence, Iterator
 
 from pytheus.backends import get_backend
-from pytheus.exceptions import UnobservableMetricException
+from pytheus.exceptions import UnobservableMetricException, LabelValidationException
 from pytheus.registry import REGISTRY, Registry
 
 
@@ -34,9 +34,9 @@ class _MetricCollector:
         self,
         name: str,
         description: str,
-        # metric_class: type['Metric'],
         metric: '_Metric',
         required_labels: Sequence[str] | None = None,
+        default_labels: Labels | None = None,
         registry: Registry = REGISTRY
     ) -> None:
         if metric_name_re.fullmatch(name) is None:
@@ -45,14 +45,17 @@ class _MetricCollector:
         if required_labels:
             self._validate_labels(required_labels)
 
+        self._required_labels = set(required_labels) if required_labels else None
+
+        if default_labels:
+            self._validate_default_labels(default_labels)
+
         self.name = name
         self.description = description
-        self._required_labels = set(required_labels) if required_labels else None
+        self._default_labels = default_labels
         self._metric = metric
         self._labeled_metrics: dict[tuple[str, ...], _Metric] = {}
         registry.register(self)
-
-        # this will register to the collector
 
     @property
     def type_(self) -> str:
@@ -67,6 +70,22 @@ class _MetricCollector:
         for label in labels:
             if label.startswith('__') or label_name_re.fullmatch(label) is None:
                 raise ValueError(f'Invalid label name: {label}')
+
+    def _validate_default_labels(self, labels: Labels):
+        """
+        Validates default labels.
+        If no `required_labels` is set raises an error.
+        `default_labels` will be also validated to be a subset of `required_labels`.
+        """
+        if not self._required_labels:
+            raise LabelValidationException('default_labels set while required_labels is None')
+
+        default_labels_set = set(labels.keys())
+        if not default_labels_set.issubset(self._required_labels):
+            raise LabelValidationException(
+                'default_labels different than required_labels: '
+                f'{default_labels_set} != {self._required_labels}'
+            )
 
     def collect(self) -> Sequence[Sample] | Iterator[Sample]:
         """
@@ -88,6 +107,7 @@ class _Metric:
         description: str,
         required_labels: Sequence[str] | None = None,
         labels: Labels | None = None,
+        default_labels: Labels | None = None,
         collector: _MetricCollector | None = None,
     ) -> None:
         self._name = name
@@ -97,7 +117,7 @@ class _Metric:
         self._collector = (
             collector
             if collector
-            else _MetricCollector(name, description, self, required_labels)
+            else _MetricCollector(name, description, self, required_labels, default_labels)
         )
         self._can_observe = self._check_can_observe()
 
@@ -124,6 +144,7 @@ class _Metric:
             raise UnobservableMetricException
 
     # TODO: also consider adding default labels directly on the collector as well
+    # TODO: add default labels support
     def labels(self, _labels: Labels) -> '_Metric':
         if not _labels or self._collector._required_labels is None:
             return self

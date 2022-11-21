@@ -1,6 +1,6 @@
 import pytest
 
-from pytheus.exceptions import UnobservableMetricException
+from pytheus.exceptions import UnobservableMetricException, LabelValidationException
 from pytheus.metrics import _MetricCollector, _Metric, Counter
 
 
@@ -118,6 +118,33 @@ class TestMetric:
         metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], labels=['bob'])
         with pytest.raises(UnobservableMetricException):
             metric._raise_if_cannot_observe()
+
+    # default_labels
+
+    def test_metric_with_default_labels(self):
+        default_labels = {'bob': 'bobvalue'}
+        metric = _Metric('name', 'desc', required_labels=['bob'], default_labels=default_labels)
+        assert metric._collector._default_labels == default_labels
+
+    def test_metric_with_default_labels_raises_without_required_labels(self):
+        default_labels = {'bob': 'bobvalue'}
+        with pytest.raises(LabelValidationException):
+            _Metric('name', 'desc', default_labels=default_labels)
+
+    def test_metric_with_default_labels_with_label_not_in_required_labels(self):
+        default_labels = {'bobby': 'bobbyvalue'}
+        with pytest.raises(LabelValidationException):
+            _Metric('name', 'desc', required_labels=['bob'], default_labels=default_labels)
+
+    def test_metric_with_default_labels_with_subset_of_required_labels(self):
+        default_labels = {'bob': 'bobvalue'}
+        metric = _Metric(
+            'name',
+            'desc',
+            required_labels=['bob', 'bobby'],
+            default_labels=default_labels
+        )
+        assert metric._collector._default_labels == default_labels
 
 
 class TestCounter:
