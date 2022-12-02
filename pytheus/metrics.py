@@ -53,6 +53,7 @@ class _MetricCollector:
         self.name = name
         self.description = description
         self._default_labels = default_labels
+        self._default_labels_count = len(default_labels) if default_labels else 0
         self._metric = metric
         self._labeled_metrics: dict[tuple[str, ...], _Metric] = {}
         registry.register(self)
@@ -112,7 +113,7 @@ class _Metric:
     ) -> None:
         self._name = name
         self._description = description
-        self._labels = labels
+        self._labels = labels  # TODO: if labels is set on creation might create problems, so forbid if new collector required
         self._metric_value_backend = None
         self._collector = (
             collector
@@ -128,12 +129,18 @@ class _Metric:
         if not self._collector._required_labels:
             return True
 
+        required_labels_count = len(self._collector._required_labels)
+        if (
+            self._collector._default_labels_count
+            and self._collector._default_labels_count == required_labels_count
+        ):
+            return True
+
         if not self._labels:
             return False
 
-        # TODO: labels will need better validation checks
-        if len(self._labels) != len(self._collector._required_labels):
-            # TODO: custom exceptions required
+        labels_count_with_default = len(self._labels) + self._collector._default_labels_count
+        if labels_count_with_default != required_labels_count:
             return False
 
         return True
