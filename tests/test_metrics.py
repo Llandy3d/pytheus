@@ -127,6 +127,11 @@ class TestMetric:
         metric = metric.labels({'cat': 2})
         assert metric._check_can_observe() is True
 
+    def test_check_can_observe_with_default_labels_partial_overriden_label(self):
+        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], default_labels={'bob': 1})
+        metric = metric.labels({'cat': 2, 'bob': 2})
+        assert metric._check_can_observe() is True
+
     def test_raises_if_cannot_be_observed_unobservable(self):
         metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], labels=['bob'])
         with pytest.raises(UnobservableMetricException):
@@ -158,6 +163,28 @@ class TestMetric:
             default_labels=default_labels
         )
         assert metric._collector._default_labels == default_labels
+
+    def test_get_sample(self):
+        from pytheus.metrics import Sample
+        metric = _Metric('name', 'desc')
+        sample = metric._get_sample()
+        assert sample == Sample('', None, 0)
+
+    def test_add_default_labels_to_sample(self):
+        default_labels = {'bob': 'bobvalue'}
+        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], default_labels=default_labels)
+        metric = metric.labels({'cat': 2})
+        sample = metric._get_sample()
+
+        assert sample.labels == {'bob': 'bobvalue', 'cat': 2}
+
+    def test_add_default_labels_to_sample_does_not_ovveride_provided_labels(self):
+        default_labels = {'bob': 'bobvalue'}
+        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], default_labels=default_labels)
+        metric = metric.labels({'cat': 2, 'bob': 'newvalue'})
+        sample = metric._get_sample()
+
+        assert sample.labels == {'bob': 'newvalue', 'cat': 2}
 
 
 class TestCounter:

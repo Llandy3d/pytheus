@@ -139,8 +139,14 @@ class _Metric:
         if not self._labels:
             return False
 
-        labels_count_with_default = len(self._labels) + self._collector._default_labels_count
-        if labels_count_with_default != required_labels_count:
+        if self._collector._default_labels:
+            default_labels = self._collector._default_labels.copy()
+            default_labels.update(self._labels)
+            labels_count = len(default_labels)
+        else:
+            labels_count = len(self._labels)
+
+        if labels_count != required_labels_count:
             return False
 
         return True
@@ -150,30 +156,33 @@ class _Metric:
         if not self._can_observe:
             raise UnobservableMetricException
 
-    # TODO: also consider adding default labels directly on the collector as well
-    # TODO: add default labels support
-    def labels(self, _labels: Labels) -> '_Metric':
-        if not _labels or self._collector._required_labels is None:
+    def labels(self, labels_: Labels) -> '_Metric':
+        if not labels_ or self._collector._required_labels is None:
             return self
 
-        # TODO: when testing rewrite in a better way
         if self._labels:
             new_labels = self._labels.copy()
-            new_labels.update(_labels)
-            _labels = new_labels
+            new_labels.update(labels_)
+            labels_ = new_labels
 
-        # TODO: add labels validation
-        if len(_labels) != len(self._collector._required_labels):
+        if self._collector._default_labels:
+            default_labels = self._collector._default_labels.copy()
+            default_labels.update(labels_)
+            labels_count = len(default_labels)
+        else:
+            labels_count = len(labels_)
+
+        if labels_count != len(self._collector._required_labels):
             # does not add to collector
             return self.__class__(
                 self._name,
                 self._description,
                 collector=self._collector,
-                labels=_labels
+                labels=labels_
             )
 
         # add to collector
-        sorted_label_values = tuple(v for _, v in sorted(_labels.items()))
+        sorted_label_values = tuple(v for _, v in sorted(labels_.items()))
         if sorted_label_values in self._collector._labeled_metrics:
             metric = self._collector._labeled_metrics[sorted_label_values]
         else:
@@ -181,13 +190,29 @@ class _Metric:
                 self._name,
                 self._description,
                 collector=self._collector,
-                labels=_labels
+                labels=labels_
             )
             self._collector._labeled_metrics[sorted_label_values] = metric
         return metric
 
     def collect(self) -> Sample:
         raise NotImplementedError
+
+    def _get_sample(self) -> Sample:
+        """Get a Sample for testing. Each metric type will need to define its own."""
+        self._raise_if_cannot_observe()
+        sample = Sample('', self._labels, 0)
+        return self._add_default_labels_to_sample(sample)
+
+    def _add_default_labels_to_sample(self, sample: Sample) -> Sample:
+        """Adds default labels if available to a sample."""
+        if self._collector._default_labels_count:
+            joint_labels = self._collector._default_labels.copy()
+            if sample.labels:
+                joint_labels.update(sample.labels)
+            sample.labels = joint_labels
+
+        return sample
 
     def __repr__(self) -> str:
         return f'{self.__class__.__qualname__}({self._collector.name})'
