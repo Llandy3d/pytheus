@@ -55,7 +55,7 @@ class TestMetricCollector:
     def test_collect_without_labels(self):
         counter = Counter('name', 'desc')
         samples = counter._collector.collect()
-        assert len(samples) == 1
+        assert len(list(samples)) == 1
 
     def test_collect_with_labels(self):
         counter = Counter('name', 'desc', required_labels=['a', 'b'])
@@ -64,6 +64,28 @@ class TestMetricCollector:
         counter_c = counter.labels({'a': '6'})  # this should not be creating a sample
         samples = counter._collector.collect()
         assert len(list(samples)) == 2
+
+    def test_collect_with_default_labels(self):
+        counter = Counter('name', 'desc', required_labels=['a'], default_labels={'a': 1})
+        samples = counter._collector.collect()
+        samples = list(samples)
+        assert len(samples) == 1
+        assert 'a' in samples[0].labels
+        assert 1 == samples[0].labels['a']
+
+    def test_collect_with_labels_and_default_labels(self):
+        default_labels = {'a': 3}
+        counter = Counter('name', 'desc', required_labels=['a', 'b'], default_labels=default_labels)
+        counter_a = counter.labels({'a': '1', 'b': '2'})
+        counter_b = counter.labels({'a': '7', 'b': '8'})
+        counter_c = counter.labels({'a': '6'})  # this should not be creating a sample
+        counter_d = counter.labels({'b': '5'})
+        samples = counter._collector.collect()
+        samples = list(samples)
+        assert len(samples) == 3
+        assert samples[0].labels['a'] == '1'
+        assert samples[1].labels['a'] == '7'
+        assert samples[2].labels['a'] == 3
 
     def test_collector_created_on_metric_creation(self):
         counter = Counter('name', 'desc', required_labels=['a', 'b'])

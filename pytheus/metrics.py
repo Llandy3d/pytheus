@@ -1,4 +1,5 @@
 import re
+import itertools
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -88,17 +89,17 @@ class _MetricCollector:
                 f'{default_labels_set} != {self._required_labels}'
             )
 
-    def collect(self) -> Sequence[Sample] | Iterator[Sample]:
+    def collect(self) -> Iterator[Sample]:
         """
         Collects Samples for the metric.
-        If there are no required labels, will return a sequence with a single Sample.
-        If there are required labels, it will return an Iterator of all the Samples.
         """
         if self._required_labels:
             labeled_metrics = (metric.collect() for metric in self._labeled_metrics.values())
+            if self._default_labels and self._metric._can_observe:
+                labeled_metrics = itertools.chain(labeled_metrics, (self._metric.collect(),))
             return labeled_metrics
         else:
-            return (self._metric.collect(),)
+            return iter((self._metric.collect(),))
 
 
 class _Metric:
@@ -254,10 +255,8 @@ class Counter(_Metric):
 
     def collect(self) -> Sample:
         self._raise_if_cannot_observe()
-        # TODO: probably need a way to add default metric creation labels
-        # ideally on _Metric class initialization
-        # while being careful of not messing up the tracking logic
-        return Sample('_total', self._labels, self._metric_value_backend.get())
+        sample = Sample('_total', self._labels, self._metric_value_backend.get())
+        return self._add_default_labels_to_sample(sample)
 
 
 # maybe just go with the typing alias
