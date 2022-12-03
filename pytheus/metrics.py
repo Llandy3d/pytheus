@@ -114,7 +114,7 @@ class _Metric:
     ) -> None:
         self._name = name
         self._description = description
-        self._labels = labels  # TODO: if labels is set on creation might create problems, so forbid if new collector required
+        self._labels = labels
         self._metric_value_backend = None
         self._collector = (
             collector
@@ -122,6 +122,12 @@ class _Metric:
             else _MetricCollector(name, description, self, required_labels, default_labels)
         )
         self._can_observe = self._check_can_observe()
+
+        if not collector and labels:
+            raise LabelValidationException(
+                'Setting labels when creating a metric is not allowed. '
+                'You might be looking for default_labels.'
+            )
 
         if self._can_observe:
             self._metric_value_backend = get_backend(self)

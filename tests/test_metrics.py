@@ -111,10 +111,10 @@ class TestMetric:
         metric = _Metric('name', 'desc', required_labels=required_labels)
         assert metric._collector._required_labels == set(required_labels)
 
-    def test_create_metric_with_labels(self):
-        labels = ['bob', 'cat']
-        metric = _Metric('name', 'desc', labels=labels)
-        assert metric._labels == labels
+    def test_create_metric_raises_with_labels(self):
+        # only default labels are allowed to be set on creation
+        with pytest.raises(LabelValidationException):
+            _Metric('name', 'desc', required_labels=['a'], labels={'a': 1})
 
     def test_check_can_observe_without_required_labels(self):
         metric = _Metric('name', 'desc')
@@ -125,16 +125,25 @@ class TestMetric:
         assert metric._check_can_observe() is False
 
     def test_check_can_observe_with_required_labels_with_partial_labels(self):
-        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], labels=['bob'])
+        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'])
+        metric = metric.labels({'bob': 2})
         assert metric._check_can_observe() is False
 
     def test_check_can_observe_with_required_labels_with_labels(self):
-        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], labels=['bob', 'cat'])
+        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'])
+        metric = metric.labels({'bob': 1, 'cat': 2})
         assert metric._check_can_observe() is True
 
     def test_raises_if_cannot_be_observed_observable(self):
-        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], labels=['bob', 'cat'])
+        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'])
+        metric = metric.labels({'bob': 1, 'cat': 2})
         metric._raise_if_cannot_observe()
+
+    def test_raises_if_cannot_be_observed_unobservable(self):
+        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'])
+        metric = metric.labels({'bob': 1})
+        with pytest.raises(UnobservableMetricException):
+            metric._raise_if_cannot_observe()
 
     def test_check_can_observe_with_default_labels(self):
         metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], default_labels={'bob': 1, 'cat': 2})
@@ -153,11 +162,6 @@ class TestMetric:
         metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], default_labels={'bob': 1})
         metric = metric.labels({'cat': 2, 'bob': 2})
         assert metric._check_can_observe() is True
-
-    def test_raises_if_cannot_be_observed_unobservable(self):
-        metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], labels=['bob'])
-        with pytest.raises(UnobservableMetricException):
-            metric._raise_if_cannot_observe()
 
     # default_labels
 
