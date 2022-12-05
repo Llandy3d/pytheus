@@ -44,12 +44,12 @@ class _MetricCollector:
             raise ValueError(f'Invalid metric name: {name}')
 
         if required_labels:
-            self._validate_labels(required_labels)
+            self._validate_required_labels(required_labels)
 
         self._required_labels = set(required_labels) if required_labels else None
 
         if default_labels:
-            self._validate_default_labels(default_labels)
+            self._validate_labels(default_labels)
 
         self.name = name
         self.description = description
@@ -64,7 +64,7 @@ class _MetricCollector:
         # TODO check maybe a proper MetricTypes should to be defined
         return str.lower(self._metric.__class__.__name__)
 
-    def _validate_labels(self, labels: Sequence[str]):
+    def _validate_required_labels(self, labels: Sequence[str]):
         """
         Validates label names according to the regex.
         Labels starting with `__` are reserved for internal use by Prometheus.
@@ -73,20 +73,20 @@ class _MetricCollector:
             if label.startswith('__') or label_name_re.fullmatch(label) is None:
                 raise ValueError(f'Invalid label name: {label}')
 
-    def _validate_default_labels(self, labels: Labels):
+    def _validate_labels(self, labels: Labels):
         """
-        Validates default labels.
+        Validates labels.
         If no `required_labels` is set raises an error.
-        `default_labels` will be also validated to be a subset of `required_labels`.
+        `labels` will be also validated to be a subset of `required_labels`.
         """
         if not self._required_labels:
-            raise LabelValidationException('default_labels set while required_labels is None')
+            raise LabelValidationException('trying to use labels while required_labels is None')
 
-        default_labels_set = set(labels.keys())
-        if not default_labels_set.issubset(self._required_labels):
+        labels_set = set(labels.keys())
+        if not labels_set.issubset(self._required_labels):
             raise LabelValidationException(
-                'default_labels different than required_labels: '
-                f'{default_labels_set} != {self._required_labels}'
+                'labels different than required_labels: '
+                f'{labels_set} != {self._required_labels}'
             )
 
     def collect(self) -> Iterator[Sample]:
@@ -164,8 +164,17 @@ class _Metric:
             raise UnobservableMetricException
 
     def labels(self, labels_: Labels) -> '_Metric':
-        if not labels_ or self._collector._required_labels is None:
+        """
+        If no labels is passed to the call returns itself.
+        If there are already present labels, they will be updated with the passed labels_ and if
+        it's not observable will just return the new child instance. Otherwise it will also add
+        the instance to the labeled_metrics on the collector.
+        """
+        # if not labels_ or self._collector._required_labels is None:
+        if not labels_:
             return self
+
+        self._collector._validate_labels(labels_)
 
         if self._labels:
             new_labels = self._labels.copy()

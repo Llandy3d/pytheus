@@ -34,10 +34,10 @@ class TestMetricCollector:
         with pytest.raises(ValueError):
             _MetricCollector(name, 'desc', _Metric)
 
-    def test_validate_label_with_correct_values(self):
+    def test_validate_required_labels_with_correct_values(self):
         labels = ['action', 'method', '_type']
         collector = _MetricCollector('name', 'desc', _Metric)
-        collector._validate_labels(labels)
+        collector._validate_required_labels(labels)
 
     @pytest.mark.parametrize(
         'label',
@@ -47,10 +47,10 @@ class TestMetricCollector:
             '@type',
         ],
     )
-    def test_validate_label_with_incorrect_values(self, label):
+    def test_validate_required_labels_with_incorrect_values(self, label):
         collector = _MetricCollector('name', 'desc', _Metric)
         with pytest.raises(ValueError):
-            collector._validate_labels([label])
+            collector._validate_required_labels([label])
 
     def test_collect_without_labels(self):
         counter = Counter('name', 'desc')
@@ -162,6 +162,40 @@ class TestMetric:
         metric = _Metric('name', 'desc', required_labels=['bob', 'cat'], default_labels={'bob': 1})
         metric = metric.labels({'cat': 2, 'bob': 2})
         assert metric._check_can_observe() is True
+
+    # labels
+
+    def test_labels_without_labels_return_itself(self):
+        metric = _Metric('name', 'desc')
+        new = metric.labels({})
+        assert new is metric
+
+    def test_labels_without_required_labels_raises(self):
+        metric = _Metric('name', 'desc')
+        with pytest.raises(LabelValidationException):
+            metric.labels({'a': 1})
+
+    def test_labels_unobservable(self):
+        metric = _Metric('name', 'desc', required_labels=['a', 'b'])
+        metric = metric.labels({'a': 1})
+        assert metric not in metric._collector._labeled_metrics.values()
+
+    def test_labels_observable(self):
+        metric = _Metric('name', 'desc', required_labels=['a', 'b'])
+        metric = metric.labels({'a': 1, 'b': 2})
+        assert metric in metric._collector._labeled_metrics.values()
+
+    def test_labels_observable_returns_existing_child(self):
+        metric = _Metric('name', 'desc', required_labels=['a', 'b'])
+        metric_a = metric.labels({'a': 1, 'b': 2})
+        metric_b = metric.labels({'a': 1, 'b': 2})
+        assert len(metric._collector._labeled_metrics) == 1
+        assert metric_a is metric_b
+
+    def test_labels_with_unknown_label(self):
+        metric = _Metric('name', 'desc', required_labels=['a', 'b'])
+        with pytest.raises(LabelValidationException):
+            metric.labels({'a': 1, 'c': 2})
 
     # default_labels
 
