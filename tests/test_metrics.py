@@ -320,3 +320,11 @@ class TestGauge:
     def test_can_decrement_with_negative_value(self, gauge):
         gauge.dec(-7.2)
         assert gauge._metric_value_backend.get() == 7.2
+
+    def test_can_set(self, gauge):
+        gauge.set(5.2)
+        assert gauge._metric_value_backend.get() == 5.2
+
+    def test_can_set_negative(self, gauge):
+        gauge.set(-5.2)
+        assert gauge._metric_value_backend.get() == -5.2

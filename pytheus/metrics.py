@@ -292,6 +292,13 @@ class Gauge(_Metric):
         self._raise_if_cannot_observe()
         self._metric_value_backend.dec(value)
 
+    def set(self, value: float) -> None:
+        """
+        Set the value to the given amount.
+        """
+        self._raise_if_cannot_observe()
+        self._metric_value_backend.set(value)
+
     def collect(self) -> Sample:
         self._raise_if_cannot_observe()
         sample = Sample('', self._labels, self._metric_value_backend.get())
