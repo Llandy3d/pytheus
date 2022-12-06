@@ -1,3 +1,4 @@
+import time
 import pytest
 
 from pytheus.exceptions import UnobservableMetricException, LabelValidationException
@@ -297,6 +298,9 @@ class TestGauge:
     def gauge(self):
         return Gauge('name', 'desc')
 
+    def test_gauge_starts_at_zero(self, gauge):
+        assert gauge._metric_value_backend.get() == 0
+
     def test_can_increment(self, gauge):
         gauge.inc()
         assert gauge._metric_value_backend.get() == 1
@@ -328,3 +332,9 @@ class TestGauge:
     def test_can_set_negative(self, gauge):
         gauge.set(-5.2)
         assert gauge._metric_value_backend.get() == -5.2
+
+    # this has to fail sooner or later, the question is when ?
+    def test_set_to_current_time(self, gauge):
+        time_ = time.time()
+        gauge.set_to_current_time()
+        assert int(gauge._metric_value_backend.get()) == int(time_)

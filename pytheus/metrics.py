@@ -1,5 +1,7 @@
-import re
 import itertools
+import re
+import time
+
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -298,6 +300,11 @@ class Gauge(_Metric):
         """
         self._raise_if_cannot_observe()
         self._metric_value_backend.set(value)
+
+    def set_to_current_time(self) -> None:
+        """Set the value to the current unix timestamp."""
+        self._raise_if_cannot_observe()
+        self._metric_value_backend.set(time.time())
 
     def collect(self) -> Sample:
         self._raise_if_cannot_observe()
