@@ -316,6 +316,16 @@ class Gauge(_Metric):
         yield
         self.dec()
 
+    @contextmanager
+    def time(self) -> Generator[None, None, None]:
+        """
+        Times the duration inside of it and sets the value.
+        """
+        self._raise_if_cannot_observe()
+        start = time.perf_counter()
+        yield
+        self.set(time.perf_counter() - start)
+
     def collect(self) -> Sample:
         self._raise_if_cannot_observe()
         sample = Sample('', self._labels, self._metric_value_backend.get())

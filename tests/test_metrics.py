@@ -351,3 +351,8 @@ class TestGauge:
         with gauge.track_inprogress():
             with gauge.track_inprogress():
                 assert gauge._metric_value_backend.get() == 2
+
+    def test_time(self, gauge):
+        with gauge.time():
+            pass
+        assert gauge._metric_value_backend.get() != 0
