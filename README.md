@@ -7,7 +7,7 @@ playing with metrics
 ---
 
 Experimenting with a different way of creating prometheus metrics in python:
-- support for default labels value (wip ⚠️)
+- support for default labels value ✅
 - partial labels value (built in an incremental way) ✅
 - multiple multiprocess support:
   - mmap file based (wip ⚠️)
@@ -35,14 +35,14 @@ pip install pytheus[redis]
 **Partial labels support:**
 
 ```python
-from pytheus.metrics import create_counter
+from pytheus.metrics import Counter
 
 # without labels
-my_metric = create_counter('metric_name', 'desc')
+my_metric = Counter('metric_name', 'desc')
 my_metric.inc()  # example for counter
 
 # with labels
-my_metric = create_counter('metric_name', 'desc', required_labels=['req1', 'req2'])
+my_metric = Counter('metric_name', 'desc', required_labels=['req1', 'req2'])
 
 my_metric.labels({'req1': '1', 'req2': '2'}).inc()  # you can pass all the labels at once
 partial_my_metric = my_metric.labels({'req1': '1'})  # a cacheable object with one of the required labels already set
@@ -63,9 +63,9 @@ Alternatively you can use the `make_wsgi_app` function that creates a simple wsg
 Things work out of the box, using the SingleProcessBackend:
 
 ```python
-from pytheus.metrics import create_counter
+from pytheus.metrics import Counter
 
-counter = create_counter(
+counter = Counter(
     name="my_metric",
     description="My description",
     required_labels=["label_a", "label_b"],
@@ -94,9 +94,9 @@ Now, create the config file, `./config.json`:
 Now we can try the same snippet as above:
 
 ```python
-from pytheus.metrics import create_counter
+from pytheus.metrics import Counter
 
-counter = create_counter(
+counter = Counter(
     name="my_metric",
     description="My description",
     required_labels=["label_a", "label_b"],
@@ -112,7 +112,7 @@ setup we have just described:
 
 ```python
 
-from pytheus.metrics import create_counter
+from pytheus.metrics import Counter
 from pytheus.backends import MultipleProcessRedisBackend, load_backend
 
 load_backend(
@@ -127,7 +127,7 @@ load_backend(
 # load_backend() is called automatically at package import, that's why we didn't need to call it
 # directly in the previous example
 
-counter = create_counter(
+counter = Counter(
     name="my_metric",
     description="My description",
     required_labels=["label_a", "label_b"],
