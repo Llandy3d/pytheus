@@ -36,6 +36,10 @@ class Backend(ABC):
         return None
 
     @abstractmethod
+    def dec(self, value: float) -> None:
+        return None
+
+    @abstractmethod
     def get(self) -> float:
         return 0.0
 
@@ -113,6 +117,10 @@ class SingleProcessBackend(Backend):
     def inc(self, value: float) -> None:
         with self._lock:
             self._value += value
+
+    def dec(self, value: float) -> None:
+        with self._lock:
+            self._value -= value
 
     def get(self) -> float:
         with self._lock:

@@ -274,6 +274,30 @@ class Counter(_Metric):
         return self._add_default_labels_to_sample(sample)
 
 
+class Gauge(_Metric):
+
+    def inc(self, value: float = 1.0) -> None:
+        """
+        Increments the value by the given amount.
+        By default it will be 1.
+        """
+        self._raise_if_cannot_observe()
+        self._metric_value_backend.inc(value)
+
+    def dec(self, value: float = 1.0) -> None:
+        """
+        Decrements the value by the given amount.
+        By default it will be 1.
+        """
+        self._raise_if_cannot_observe()
+        self._metric_value_backend.dec(value)
+
+    def collect(self) -> Sample:
+        self._raise_if_cannot_observe()
+        sample = Sample('', self._labels, self._metric_value_backend.get())
+        return self._add_default_labels_to_sample(sample)
+
+
 # maybe just go with the typing alias
 @dataclass
 class Label:

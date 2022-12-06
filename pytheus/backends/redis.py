@@ -42,6 +42,12 @@ class MultipleProcessRedisBackend(Backend):
         else:
             self.CONNECTION_POOL.incrbyfloat(self._key_name, value)
 
+    def dec(self, value: float) -> None:
+        if self._labels_hash:
+            self.CONNECTION_POOL.hincrbyfloat(self._key_name, self._labels_hash, -value)
+        else:
+            self.CONNECTION_POOL.incrbyfloat(self._key_name, -value)
+
     def get(self) -> float:
         if self._labels_hash:
             value = self.CONNECTION_POOL.hget(self._key_name, self._labels_hash)

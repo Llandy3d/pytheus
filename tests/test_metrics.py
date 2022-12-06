@@ -1,7 +1,7 @@
 import pytest
 
 from pytheus.exceptions import UnobservableMetricException, LabelValidationException
-from pytheus.metrics import _MetricCollector, _Metric, Counter
+from pytheus.metrics import _MetricCollector, _Metric, Counter, Gauge
 
 
 class TestMetricCollector:
@@ -289,3 +289,34 @@ class TestCounter:
     def test_collect_adds_correct_suffix(self, counter):
         sample = counter.collect()
         assert sample.suffix == '_total'
+
+
+class TestGauge:
+
+    @pytest.fixture
+    def gauge(self):
+        return Gauge('name', 'desc')
+
+    def test_can_increment(self, gauge):
+        gauge.inc()
+        assert gauge._metric_value_backend.get() == 1
+
+    def test_can_increment_with_value(self, gauge):
+        gauge.inc(7.2)
+        assert gauge._metric_value_backend.get() == 7.2
+
+    def test_can_increment_with_negative_value(self, gauge):
+        gauge.inc(-7.2)
+        assert gauge._metric_value_backend.get() == -7.2
+
+    def test_can_decrement(self, gauge):
+        gauge.dec()
+        assert gauge._metric_value_backend.get() == -1
+
+    def test_can_decrement_with_value(self, gauge):
+        gauge.dec(7.2)
+        assert gauge._metric_value_backend.get() == -7.2
+
+    def test_can_decrement_with_negative_value(self, gauge):
+        gauge.dec(-7.2)
+        assert gauge._metric_value_backend.get() == 7.2
