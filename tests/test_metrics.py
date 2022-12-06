@@ -338,3 +338,16 @@ class TestGauge:
         time_ = time.time()
         gauge.set_to_current_time()
         assert int(gauge._metric_value_backend.get()) == int(time_)
+
+    def test_track_inprogress(self, gauge):
+        with gauge.track_inprogress():
+            assert gauge._metric_value_backend.get() == 1
+
+    def test_track_inprogress_multiple(self, gauge):
+        # will increment and decrement when exiting the context manager
+        with gauge.track_inprogress():
+            pass
+
+        with gauge.track_inprogress():
+            with gauge.track_inprogress():
+                assert gauge._metric_value_backend.get() == 2
