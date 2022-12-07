@@ -400,6 +400,20 @@ class Histogram(_Metric):
             for bucket in self._upper_bounds:
                 self._buckets.append(get_backend(self, histogram_bucket=bucket))
 
+    def collect(self) -> Iterator[Sample]:
+        self._raise_if_cannot_observe()
+        samples = []
+        for i, bound in enumerate(self._upper_bounds):
+            bucket_labels = self._labels.clone() if self._labels else {}
+            bucket_labels['le'] = bound
+            sample = Sample('_bucket', bucket_labels, self._buckets[i].get())
+            samples.append(sample)
+
+        samples.append(Sample('_sum', self._labels, self._sum.get()))
+        samples.append(Sample('_count', self._labels, self._count.get()))
+
+        return (self._add_default_labels_to_sample(sample) for sample in samples)
+
 
 # maybe just go with the typing alias
 @dataclass
