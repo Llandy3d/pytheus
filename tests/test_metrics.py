@@ -395,3 +395,15 @@ class TestHistogram:
 
     def test_does_not_have_metric_value_backend(self, histogram):
         assert histogram._metric_value_backend is None
+
+    def test_unobservable_does_not_create_buckets(self):
+        histogram = Histogram('name', 'desc', required_labels=['bob'])
+        assert histogram._buckets is None
+        assert histogram._sum is None
+
+    def test_observable_creates_buckets(self):
+        histogram = Histogram('name', 'desc', required_labels=['bob'])
+        histogram = histogram.labels({'bob': 'cat'})
+        assert histogram._sum is not None
+        assert histogram._buckets is not None
+        assert len(histogram._buckets) == len(histogram._upper_bounds)

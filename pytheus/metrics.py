@@ -338,8 +338,6 @@ class Gauge(_Metric):
         sample = Sample('', self._labels, self._metric_value_backend.get())
         return self._add_default_labels_to_sample(sample)
 
-INF = float('inf')
-# TODO: inf bucket has to exist regardless so add automatically?
 
 class Histogram(_Metric):
     # Default buckets are tailored to broadly measure the response time (in seconds) of a network
@@ -385,6 +383,19 @@ class Histogram(_Metric):
             buckets.append(float('inf'))
 
         self._upper_bounds = buckets
+
+        # create bucket values
+        self._buckets = None
+        self._sum = None
+        if self._can_observe:
+            self._buckets = []
+
+            # this will be added just to the default name on the redis backend but it is
+            # fine for now as it's the only one. Might require a more robust way in the future.
+            self._sum = get_backend(self)
+
+            for bucket in self._upper_bounds:
+                self._buckets.append(get_backend(self, histogram_bucket=bucket))
 
 
 # maybe just go with the typing alias
