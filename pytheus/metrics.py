@@ -46,7 +46,8 @@ class _MetricCollector:
             raise ValueError(f'Invalid metric name: {name}')
 
         if required_labels:
-            self._validate_required_labels(required_labels)
+            is_histogram = isinstance(metric, Histogram)
+            self._validate_required_labels(required_labels, is_histogram)
 
         self._required_labels = set(required_labels) if required_labels else None
 
@@ -66,14 +67,16 @@ class _MetricCollector:
         # TODO check maybe a proper MetricTypes should to be defined
         return str.lower(self._metric.__class__.__name__)
 
-    def _validate_required_labels(self, labels: Sequence[str]):
+    def _validate_required_labels(self, labels: Sequence[str], is_histogram: bool = False):
         """
         Validates label names according to the regex.
         Labels starting with `__` are reserved for internal use by Prometheus.
         """
         for label in labels:
             if label.startswith('__') or label_name_re.fullmatch(label) is None:
-                raise ValueError(f'Invalid label name: {label}')
+                raise LabelValidationException(f'Invalid label name: {label}')
+            if is_histogram and label == 'le':
+                raise LabelValidationException(f'Invalid label name for Histogram: {label}')
 
     def _validate_labels(self, labels: Labels):
         """
@@ -330,6 +333,10 @@ class Gauge(_Metric):
         self._raise_if_cannot_observe()
         sample = Sample('', self._labels, self._metric_value_backend.get())
         return self._add_default_labels_to_sample(sample)
+
+
+class Histogram(_Metric):
+    pass
 
 
 # maybe just go with the typing alias

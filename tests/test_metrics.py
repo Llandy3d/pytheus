@@ -2,7 +2,7 @@ import time
 import pytest
 
 from pytheus.exceptions import UnobservableMetricException, LabelValidationException
-from pytheus.metrics import _MetricCollector, _Metric, Counter, Gauge
+from pytheus.metrics import _MetricCollector, _Metric, Counter, Gauge, Histogram
 
 
 class TestMetricCollector:
@@ -50,7 +50,7 @@ class TestMetricCollector:
     )
     def test_validate_required_labels_with_incorrect_values(self, label):
         collector = _MetricCollector('name', 'desc', _Metric)
-        with pytest.raises(ValueError):
+        with pytest.raises(LabelValidationException):
             collector._validate_required_labels([label])
 
     def test_collect_without_labels(self):
@@ -356,3 +356,17 @@ class TestGauge:
         with gauge.time():
             pass
         assert gauge._metric_value_backend.get() != 0
+
+
+class TestHistogram:
+
+    @pytest.fixture
+    def histogram(self):
+        return Histogram('name', 'desc')
+
+    def test_create_histogram_with_default_labels(self):
+        Histogram('name', 'desc', required_labels=['bob', 'cat'])
+
+    def test_histogram_fails_with_le_label(self):
+        with pytest.raises(LabelValidationException):
+            Histogram('name', 'desc', required_labels=['bob', 'le'])
