@@ -1,7 +1,11 @@
 import time
 import pytest
 
-from pytheus.exceptions import UnobservableMetricException, LabelValidationException
+from pytheus.exceptions import (
+    BucketException,
+    UnobservableMetricException,
+    LabelValidationException,
+)
 from pytheus.metrics import _MetricCollector, _Metric, Counter, Gauge, Histogram
 
 
@@ -370,3 +374,24 @@ class TestHistogram:
     def test_histogram_fails_with_le_label(self):
         with pytest.raises(LabelValidationException):
             Histogram('name', 'desc', required_labels=['bob', 'le'])
+
+    def test_buckets_adds_inf_implicitly(self):
+        buckets = [0.2, 0.5, 1]
+        histogram = Histogram('name', 'desc', buckets=buckets)
+        assert histogram._upper_bounds[-1] == float('inf')
+
+    def test_buckets_with_sorted_order(self):
+        buckets = [0.2, 0.5, 1]
+        histogram = Histogram('name', 'desc', buckets=buckets)
+        assert histogram._upper_bounds == buckets + [float('inf')]
+
+    def test_buckets_with_unsorted_order_fails(self):
+        with pytest.raises(BucketException):
+            Histogram('name', 'desc', buckets=(0.2, 1, 0.5))
+
+    def test_buckets_empty_uses_default_buckets(self):
+        histogram = Histogram('name', 'desc', buckets=[])
+        assert histogram._upper_bounds == list(histogram.DEFAULT_BUCKETS) + [float('inf')]
+
+    def test_does_not_have_metric_value_backend(self, histogram):
+        assert histogram._metric_value_backend is None

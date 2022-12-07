@@ -16,3 +16,7 @@ class InvalidBackendConfigException(PytheusException):
 
 class LabelValidationException(PytheusException):
     pass
+
+
+class BucketException(PytheusException):
+    pass

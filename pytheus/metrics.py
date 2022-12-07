@@ -8,7 +8,11 @@ from dataclasses import dataclass
 from typing import Sequence, Iterator
 
 from pytheus.backends import get_backend
-from pytheus.exceptions import UnobservableMetricException, LabelValidationException
+from pytheus.exceptions import (
+    UnobservableMetricException,
+    LabelValidationException,
+    BucketException,
+)
 from pytheus.registry import REGISTRY, Registry
 
 
@@ -134,7 +138,7 @@ class _Metric:
                 'You might be looking for default_labels.'
             )
 
-        if self._can_observe:
+        if self._can_observe and not isinstance(self, Histogram):
             self._metric_value_backend = get_backend(self)
 
     def _check_can_observe(self) -> bool:
@@ -334,9 +338,53 @@ class Gauge(_Metric):
         sample = Sample('', self._labels, self._metric_value_backend.get())
         return self._add_default_labels_to_sample(sample)
 
+INF = float('inf')
+# TODO: inf bucket has to exist regardless so add automatically?
 
 class Histogram(_Metric):
-    pass
+    # Default buckets are tailored to broadly measure the response time (in seconds) of a network
+    # service. Most likely you will be required to define buckets customized to your use case.
+    # Valus taken from the golang/rust client.
+    DEFAULT_BUCKETS = (.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10)
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        required_labels: Sequence[str] | None = None,
+        labels: Labels | None = None,
+        default_labels: Labels | None = None,
+        collector: _MetricCollector | None = None,
+        buckets: Sequence[float] = DEFAULT_BUCKETS,
+    ) -> None:
+        super().__init__(
+            name,
+            description,
+            required_labels,
+            labels,
+            default_labels,
+            collector,
+        )
+
+        # buckets
+
+        # if buckets is None or an empty sequence default buckets will be used
+        if not buckets:
+            buckets = list(self.DEFAULT_BUCKETS)
+        else:
+            buckets = list(buckets)
+
+        sorted_buckets = sorted(buckets)
+        if buckets != sorted_buckets:
+            raise BucketException(
+                f'buckets values are not in sorted order. {buckets} != {sorted_buckets}'
+            )
+
+        # +inf is required so we always add it
+        if buckets[-1] != float('inf'):
+            buckets.append(float('inf'))
+
+        self._upper_bounds = buckets
 
 
 # maybe just go with the typing alias
