@@ -400,10 +400,12 @@ class TestHistogram:
         histogram = Histogram('name', 'desc', required_labels=['bob'])
         assert histogram._buckets is None
         assert histogram._sum is None
+        assert histogram._count is None
 
     def test_observable_creates_buckets(self):
         histogram = Histogram('name', 'desc', required_labels=['bob'])
         histogram = histogram.labels({'bob': 'cat'})
         assert histogram._sum is not None
+        assert histogram._count is not None
         assert histogram._buckets is not None
         assert len(histogram._buckets) == len(histogram._upper_bounds)

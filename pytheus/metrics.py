@@ -387,12 +387,15 @@ class Histogram(_Metric):
         # create bucket values
         self._buckets = None
         self._sum = None
+        self._count = None
         if self._can_observe:
             self._buckets = []
 
             # this will be added just to the default name on the redis backend but it is
             # fine for now as it's the only one. Might require a more robust way in the future.
-            self._sum = get_backend(self)
+            self._sum = get_backend(self, histogram_bucket='sum')
+            self._count = get_backend(self, histogram_bucket='count')
+            # NOTE: yap might make more sente to rename it
 
             for bucket in self._upper_bounds:
                 self._buckets.append(get_backend(self, histogram_bucket=bucket))
