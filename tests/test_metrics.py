@@ -419,3 +419,18 @@ class TestHistogram:
         assert 'le' in samples[0].labels
         assert 0.2 in samples[0].labels.values()
         assert len(samples) == 6  # includes float('inf')
+
+    def test_osberve_unobservable_raises(self):
+        histogram = Histogram('name', 'desc', required_labels=['bob'])
+        with pytest.raises(UnobservableMetricException):
+            histogram.observe(2)
+
+    def test_observe(self):
+        histogram = Histogram('name', 'desc', buckets=[0.2, 0.5, 1])
+        histogram.observe(0.4)
+
+        assert histogram._sum.get() == 0.4
+        assert histogram._count.get() == 1
+        assert histogram._buckets[0].get() == 0
+        assert histogram._buckets[1].get() == 1
+        assert histogram._buckets[2].get() == 0

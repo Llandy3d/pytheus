@@ -400,6 +400,22 @@ class Histogram(_Metric):
             for bucket in self._upper_bounds:
                 self._buckets.append(get_backend(self, histogram_bucket=bucket))
 
+    def observe(self, value: float) -> None:
+        """
+        Observe the given value.
+        Value can be negative, in that case the rate function will be less useful so
+        it's better to consider using two histograms for positive and negative values.
+        """
+        self._raise_if_cannot_observe()
+        self._sum.inc(value)
+
+        for i, bound in enumerate(self._upper_bounds):
+            if value <= bound:
+                self._buckets[i].inc(1)
+                break
+
+        self._count.inc(1)
+
     def collect(self) -> Iterator[Sample]:
         self._raise_if_cannot_observe()
         samples = []
