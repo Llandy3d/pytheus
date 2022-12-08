@@ -291,10 +291,6 @@ class TestCounter:
 
         assert counter._metric_value_backend.get() == 0
 
-    def test_collect_adds_correct_suffix(self, counter):
-        sample = counter.collect()
-        assert sample.suffix == '_total'
-
 
 class TestGauge:
 

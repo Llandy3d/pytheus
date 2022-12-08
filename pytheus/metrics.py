@@ -279,7 +279,7 @@ class Counter(_Metric):
 
     def collect(self) -> Sample:
         self._raise_if_cannot_observe()
-        sample = Sample('_total', self._labels, self._metric_value_backend.get())
+        sample = Sample('', self._labels, self._metric_value_backend.get())
         return self._add_default_labels_to_sample(sample)
 
 
