@@ -8,6 +8,7 @@ from pytheus.backends.base import Backend, BackendConfig
 if TYPE_CHECKING:
     from pytheus.metrics import _Metric, Histogram
 
+
 class MultipleProcessRedisBackend(Backend):
     """
     Provides a multi-process backend that uses Redis.
@@ -35,8 +36,16 @@ class MultipleProcessRedisBackend(Backend):
         if histogram_bucket:
             self._key_name = f'{self._key_name}:{histogram_bucket}'
 
-        # TODO: missing default labels
-        if self.metric._labels:
+        # default labels
+        joint_labels = None
+        if self.metric._collector._default_labels_count:
+            joint_labels = self.metric._collector._default_labels.copy()
+            if self.metric._labels:
+                joint_labels.update(self.metric._labels)
+
+        if joint_labels:
+            self._labels_hash = '-'.join(sorted(joint_labels.values()))
+        elif self.metric._labels:
             self._labels_hash = '-'.join(sorted(self.metric._labels.values()))
 
         if self.CONNECTION_POOL is None:
