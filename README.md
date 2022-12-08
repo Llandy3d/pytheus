@@ -78,7 +78,7 @@ Alternatively you can use the `make_wsgi_app` function that creates a simple wsg
 
 ## Quickstart / Example
 
-The `example_test.py` file starts a flask application with three endpoints:
+The `example.py` file starts a flask application with three endpoints:
   - `/`: just returns a phrase while observing the time taken for the request to complete
   -  `/slow`: same as before but will sleep so that values will only end up in higher buckets
   -  `/metrics`: the endpoint used by prometheus to scrape the metrics
@@ -90,7 +90,7 @@ note: the example file is using the redis backend but you can try without and se
 ### Redis version
 
 For the redis version you can just clone the repository and run `docker-compose up` to start both redis and prometheus scraping on localhost:8080.
-Then you can start the local server with `python example_test.py`. (flask is required for it to work)
+Then you can start the local server with `python example.py`. (flask is required for it to work)
 
 Now you can visit the described endpoints and by visiting `localhost:9090` you can query prometheus, for example by looking for all the slow requests buckets: `page_visits_latency_seconds_labeled_bucket{speed="slow"}`
 
@@ -109,8 +109,8 @@ from pytheus.exposition import generate_metrics
 app = Flask(__name__)
 
 histogram = Histogram('page_visits_latency_seconds', 'used for testing')
-histogram_labeled = Histogram('page_visits_latency_seconds_labeled', 'used for testing', required_labels=['speed'], default_labels={'speed': 'normal'})
 
+# this is the endpoint that prometheus will use to scrape the metrics
 @app.route('/metrics')
 def metrics():
     return generate_metrics()
@@ -118,20 +118,18 @@ def metrics():
 @app.route('/')
 def home():
     with histogram.time():
-        with histogram_labeled.time():
-            return 'hello world!'
+        return 'hello world!'
 
 @app.route('/slow')
 def slow():
     with histogram.time():
-        with histogram_labeled.labels({'speed': 'slow'}).time():
-            time.sleep(3)
-            return 'hello world! from slow!'
+        time.sleep(3)
+        return 'hello world! from slow!'
 
 app.run(host='0.0.0.0', port=8080)
 ```
 
-and if you have prometheus installed configure it to scrape on localhost:8080 or you can still use the included `docer-compose.yml` file.
+and if you have prometheus installed configure it to scrape on localhost:8080 or you can still use the included `docker-compose.yml` file.
 
 ---
 
