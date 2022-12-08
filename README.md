@@ -74,6 +74,32 @@ You can use the `generate_metrics` function from `pytheus.exposition` to generat
 
 Alternatively you can use the `make_wsgi_app` function that creates a simple wsgi app to serve the metrics.
 
+## Metric types
+
+### Counter
+
+The Counter is a metric that only increases and can resets to 0. (For example if a service restart, it will start again from zero)
+
+```python
+from pytheus.metrics import Counter
+
+counter = Counter(name="my_counter", description="My description")
+
+# increase by 1
+counter.inc()
+
+# increase by x
+counter.inc(7)
+
+# it is possible to count exceptions
+with counter.count_exceptions():
+    raise ValueError  # increases counter by 1
+    
+# you can specify which exceptions to watch for
+with counter.count_exceptions((IndexError, ValueError)):
+    raise ValueError. # increases counter by 1
+```
+
 ## How to use different backends
 
 Things work out of the box, using the SingleProcessBackend:
