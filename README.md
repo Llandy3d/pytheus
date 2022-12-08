@@ -46,7 +46,23 @@ my_metric = Counter('metric_name', 'desc', required_labels=['req1', 'req2'])
 
 my_metric.labels({'req1': '1', 'req2': '2'}).inc()  # you can pass all the labels at once
 partial_my_metric = my_metric.labels({'req1': '1'})  # a cacheable object with one of the required labels already set
-observable_my_metric = partial_my_metric.labels({'req2': '2'}).inc()  # finish setting the remaining values before observing
+observable_my_metric = partial_my_metric.labels({'req2': '2'})  # finish setting the remaining values before observing
+observable_my_metric.inc()
+
+```
+
+---
+
+**Default labels support:**
+
+```python
+from pytheus.metrics import Counter
+
+# with default labels
+my_metric = Counter('metric_name', 'desc', required_labels=['req1', 'req2'], default_labels={'req2': 'me_set!'})
+
+my_metric.labels({'req1': '1'}).inc()  # as we have req2 as a default label we only need to set the remaining labels for observing
+my_metric.labels({'req1': '1', 'req2': '2'})  # you can still override default labels!
 
 ```
 
