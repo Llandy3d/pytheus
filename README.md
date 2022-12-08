@@ -135,6 +135,31 @@ with gauge.time():
     do_something()
 ```
 
+---
+
+### Histogram
+
+A histogram samples observations (usually things like request durations or response sizes) and counts them in configurable buckets. It also provides a sum of all observed values. ([taken from prometheus docs](https://prometheus.io/docs/concepts/metric_types/#histogram))
+
+```python
+from pytheus.metrics import Histogram
+
+histogram = Histogram(name="my_histogram", description="My description")
+# by default it will have the following buckets: (.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10)
+# note: the +Inf bucket will be added automatically, this is float('inf') in python
+
+# create a histogram specifying buckets
+histogram = Histogram(name="my_histogram", description="My description", buckets=(0.2, 1, 3))
+
+# observe a value
+histogram.observe(0.4)
+    
+# you can also time a piece of code, will set the duration in seconds to value when exited
+with histogram.time():
+    do_something()
+```
+
+
 ## How to use different backends
 
 Things work out of the box, using the SingleProcessBackend:
