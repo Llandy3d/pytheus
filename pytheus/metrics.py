@@ -424,7 +424,6 @@ class Histogram(_Metric):
         for i, bound in enumerate(self._upper_bounds):
             if value <= bound:
                 self._buckets[i].inc(1)
-                break
 
         self._count.inc(1)
 
