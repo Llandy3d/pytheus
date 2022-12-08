@@ -100,6 +100,41 @@ with counter.count_exceptions((IndexError, ValueError)):
     raise ValueError. # increases counter by 1
 ```
 
+---
+
+### Gauge
+
+The Gauge can increase and decrease its value. It is also possible to set a specific value.
+
+```python
+from pytheus.metrics import Gauge
+
+gauge = Gauge(name="my_gauge", description="My description")
+
+# increase by 1
+gauge.inc()
+
+# increase by x
+gauge.inc(7)
+
+# decrease by 1
+gauge.dec()
+
+# set a specific value
+gauge.set(7)
+
+# set to current unix timestamp
+gauge.set_to_current_time()
+
+# it is possible to track progress so that when entered increases the value by 1, and when exited decreases it
+with gauge.track_inprogress():
+    do_something()
+    
+# you can also time a piece of code, will set the duration in seconds to value when exited
+with gauge.time():
+    do_something()
+```
+
 ## How to use different backends
 
 Things work out of the box, using the SingleProcessBackend:
