@@ -1,7 +1,7 @@
 import pytest
 
 from pytheus.exposition import generate_metrics
-from pytheus.metrics import Counter
+from pytheus.metrics import Counter, Histogram
 from pytheus.registry import REGISTRY, CollectorRegistry
 
 
@@ -50,4 +50,41 @@ class TestExposition:
             '# TYPE testing_exception_total counter\n'
             'testing_exception_total 4.0\n'
             ''
+        )
+
+    def test_generate_metrics_histogram(self):
+        registry = CollectorRegistry()
+        REGISTRY.set_registry(registry)
+
+        histogram = Histogram('hello', 'world')
+        histogram.observe(0.4)
+        metrics_text = generate_metrics()
+        assert metrics_text == (
+            '# HELP hello world\n# TYPE hello histogram\nhello_bucket{le="0.005"} 0.0\nhello_bucket{le="0.01"} 0.0\nhello_bucket{le="0.025"} 0.0\nhello_bucket{le="0.05"} 0.0\nhello_bucket{le="0.1"} 0.0\nhello_bucket{le="0.25"} 0.0\nhello_bucket{le="0.5"} 1.0\nhello_bucket{le="1"} 0.0\nhello_bucket{le="2.5"} 0.0\nhello_bucket{le="5"} 0.0\nhello_bucket{le="10"} 0.0\nhello_bucket{le="inf"} 0.0\nhello_sum 0.4\nhello_count 1.0\n'
+        )
+
+    def test_generate_metrics_histogram_with_labels(self):
+        registry = CollectorRegistry()
+        REGISTRY.set_registry(registry)
+
+        histogram = Histogram('hello', 'world', required_labels=['bob'])
+        histogram_a = histogram.labels({'bob': 'a'})
+        histogram_b = histogram.labels({'bob': 'b'})
+        histogram_a.observe(0.4)
+        histogram_b.observe(7)
+        metrics_text = generate_metrics()
+        assert metrics_text == (
+            '# HELP hello world\n# TYPE hello histogram\nhello_bucket{bob="a",le="0.005"} 0.0\nhello_bucket{bob="a",le="0.01"} 0.0\nhello_bucket{bob="a",le="0.025"} 0.0\nhello_bucket{bob="a",le="0.05"} 0.0\nhello_bucket{bob="a",le="0.1"} 0.0\nhello_bucket{bob="a",le="0.25"} 0.0\nhello_bucket{bob="a",le="0.5"} 1.0\nhello_bucket{bob="a",le="1"} 0.0\nhello_bucket{bob="a",le="2.5"} 0.0\nhello_bucket{bob="a",le="5"} 0.0\nhello_bucket{bob="a",le="10"} 0.0\nhello_bucket{bob="a",le="inf"} 0.0\nhello_sum{bob="a"} 0.4\nhello_count{bob="a"} 1.0\nhello_bucket{bob="b",le="0.005"} 0.0\nhello_bucket{bob="b",le="0.01"} 0.0\nhello_bucket{bob="b",le="0.025"} 0.0\nhello_bucket{bob="b",le="0.05"} 0.0\nhello_bucket{bob="b",le="0.1"} 0.0\nhello_bucket{bob="b",le="0.25"} 0.0\nhello_bucket{bob="b",le="0.5"} 0.0\nhello_bucket{bob="b",le="1"} 0.0\nhello_bucket{bob="b",le="2.5"} 0.0\nhello_bucket{bob="b",le="5"} 0.0\nhello_bucket{bob="b",le="10"} 1.0\nhello_bucket{bob="b",le="inf"} 0.0\nhello_sum{bob="b"} 7.0\nhello_count{bob="b"} 1.0\n'
+        )
+
+    def test_generate_metrics_histogram_with_labels_and_default_labels(self):
+        registry = CollectorRegistry()
+        REGISTRY.set_registry(registry)
+
+        histogram = Histogram('hello', 'world', required_labels=['bob'], default_labels={'bob': 'default'})
+        histogram = histogram.labels({'bob': 'a'})
+        histogram.observe(0.4)
+        metrics_text = generate_metrics()
+        assert metrics_text == (
+            '# HELP hello world\n# TYPE hello histogram\nhello_bucket{bob="a",le="0.005"} 0.0\nhello_bucket{bob="a",le="0.01"} 0.0\nhello_bucket{bob="a",le="0.025"} 0.0\nhello_bucket{bob="a",le="0.05"} 0.0\nhello_bucket{bob="a",le="0.1"} 0.0\nhello_bucket{bob="a",le="0.25"} 0.0\nhello_bucket{bob="a",le="0.5"} 1.0\nhello_bucket{bob="a",le="1"} 0.0\nhello_bucket{bob="a",le="2.5"} 0.0\nhello_bucket{bob="a",le="5"} 0.0\nhello_bucket{bob="a",le="10"} 0.0\nhello_bucket{bob="a",le="inf"} 0.0\nhello_sum{bob="a"} 0.4\nhello_count{bob="a"} 1.0\nhello_bucket{bob="default",le="0.005"} 0.0\nhello_bucket{bob="default",le="0.01"} 0.0\nhello_bucket{bob="default",le="0.025"} 0.0\nhello_bucket{bob="default",le="0.05"} 0.0\nhello_bucket{bob="default",le="0.1"} 0.0\nhello_bucket{bob="default",le="0.25"} 0.0\nhello_bucket{bob="default",le="0.5"} 0.0\nhello_bucket{bob="default",le="1"} 0.0\nhello_bucket{bob="default",le="2.5"} 0.0\nhello_bucket{bob="default",le="5"} 0.0\nhello_bucket{bob="default",le="10"} 0.0\nhello_bucket{bob="default",le="inf"} 0.0\nhello_sum{bob="default"} 0.0\nhello_count{bob="default"} 0.0\n'
         )

@@ -104,11 +104,23 @@ class _MetricCollector:
         """
         if self._required_labels:
             labeled_metrics = (metric.collect() for metric in self._labeled_metrics.values())
+            if isinstance(self._metric, Histogram):
+                # as histograms collect returns an iterator, we flatten it
+                labeled_metrics = (sample for metric in labeled_metrics for sample in metric)
             if self._default_labels and self._metric._can_observe:
-                labeled_metrics = itertools.chain(labeled_metrics, (self._metric.collect(),))
+                # NOTE: a lot of these checks or duplication could be removed if all collect()
+                # would return an Iterator
+                if isinstance(self._metric, Histogram):
+                    labeled_metrics = itertools.chain(labeled_metrics, self._metric.collect())
+                else:
+                    labeled_metrics = itertools.chain(labeled_metrics, (self._metric.collect(),))
             return labeled_metrics
         else:
-            return iter((self._metric.collect(),))
+            # histograms return already an iterator of Samples
+            if isinstance(self._metric, Histogram):
+                return self._metric.collect()
+            else:
+                return iter((self._metric.collect(),))
 
 
 class _Metric:
@@ -430,7 +442,7 @@ class Histogram(_Metric):
         self._raise_if_cannot_observe()
         samples = []
         for i, bound in enumerate(self._upper_bounds):
-            bucket_labels = self._labels.clone() if self._labels else {}
+            bucket_labels = self._labels.copy() if self._labels else {}
             bucket_labels['le'] = bound
             sample = Sample('_bucket', bucket_labels, self._buckets[i].get())
             samples.append(sample)
