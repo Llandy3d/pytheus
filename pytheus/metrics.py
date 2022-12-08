@@ -416,6 +416,16 @@ class Histogram(_Metric):
 
         self._count.inc(1)
 
+    @contextmanager
+    def time(self) -> Generator[None, None, None]:
+        """
+        Times the duration inside of it and sets the value.
+        """
+        self._raise_if_cannot_observe()
+        start = time.perf_counter()
+        yield
+        self.observe(time.perf_counter() - start)
+
     def collect(self) -> Iterator[Sample]:
         self._raise_if_cannot_observe()
         samples = []

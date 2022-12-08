@@ -434,3 +434,9 @@ class TestHistogram:
         assert histogram._buckets[0].get() == 0
         assert histogram._buckets[1].get() == 1
         assert histogram._buckets[2].get() == 0
+
+    def test_time(self, histogram):
+        with histogram.time():
+            pass
+        assert histogram._count.get() == 1
+        assert histogram._count.get() != 0
