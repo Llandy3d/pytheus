@@ -24,6 +24,12 @@ Experimenting with a different way of creating prometheus metrics in python:
 
 ---
 
+**Architecture**
+
+A small piece of the architecture is described in the [ARCHITECTURE.md file](ARCHITECTURE.md)
+
+---
+
 **Install**
 
 ```
