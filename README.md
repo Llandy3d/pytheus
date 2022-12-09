@@ -30,7 +30,7 @@ Experimenting with a different way of creating prometheus metrics in python:
 pip install pytheus
 ```
 
-Optionally if you want to use the Redis backend you will need the redis library:
+Optionally if you want to use the Redis backend (for multiprocess support) you will need the redis library:
 ```python
 pip install redis
 # or
