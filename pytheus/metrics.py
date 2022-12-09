@@ -1,3 +1,4 @@
+import functools
 import itertools
 import re
 import time
@@ -5,7 +6,7 @@ import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Sequence, Iterator
+from typing import Sequence, Iterator, Callable
 
 from pytheus.backends import get_backend
 from pytheus.exceptions import (
@@ -436,6 +437,17 @@ class Histogram(_Metric):
         start = time.perf_counter()
         yield
         self.observe(time.perf_counter() - start)
+
+    def __call__(self, func: Callable):
+        """
+        When called acts as a decorator tracking the time taken by
+        the wrapped function.
+        """
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            with self.time():
+                return func(*args, **kwargs)
+        return wrapper
 
     def collect(self) -> Iterator[Sample]:
         self._raise_if_cannot_observe()

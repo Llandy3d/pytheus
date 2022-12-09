@@ -436,3 +436,26 @@ class TestHistogram:
             pass
         assert histogram._count.get() == 1
         assert histogram._count.get() != 0
+
+    def test_as_decorator(self, histogram):
+        @histogram
+        def test():
+            pass
+
+        test()
+        assert histogram._count.get() == 1
+        assert histogram._count.get() != 0
+
+    def test_as_decorator_multiple(self, histogram):
+        @histogram
+        def test():
+            pass
+
+        @histogram
+        def test_2():
+            pass
+
+        test()
+        test_2()
+        assert histogram._count.get() == 2
+        assert histogram._count.get() != 0
