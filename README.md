@@ -16,6 +16,13 @@ Experimenting with a different way of creating prometheus metrics in python:
 - registry prefix support ✅
 
 ---
+### Philosophy
+
+- What you see is what you get.
+- No differences between `singleprocess` & `multiprocess`, the only change is loading a different backend and everything will work out of the box.
+- High flexibility with an high degree of `labels` control and customization.
+
+---
 
 **Install**
 
