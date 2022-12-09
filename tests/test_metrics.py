@@ -291,6 +291,52 @@ class TestCounter:
 
         assert counter._metric_value_backend.get() == 0
 
+    def test_count_exception_with_decorator(self, counter):
+        @counter
+        def test():
+            raise ValueError
+
+        with pytest.raises(ValueError):
+            test()
+
+        assert counter._metric_value_backend.get() == 1
+
+    def test_count_exception_with_decorator_multiple(self, counter):
+        @counter
+        def test():
+            raise ValueError
+
+        @counter
+        def test_2():
+            raise ValueError
+
+        with pytest.raises(ValueError):
+            test()
+        with pytest.raises(ValueError):
+            test_2()
+
+        assert counter._metric_value_backend.get() == 2
+
+    def test_count_exception_with_specified_as_decorator(self, counter):
+        @counter(exceptions=(IndexError, ValueError))
+        def test():
+            raise ValueError
+
+        with pytest.raises(ValueError):
+            test()
+
+        assert counter._metric_value_backend.get() == 1
+
+    def test_count_exception_with_specified_is_ignored_as_decorator(self, counter):
+        @counter(exceptions=IndexError)
+        def test():
+            raise ValueError
+
+        with pytest.raises(ValueError):
+            test()
+
+        assert counter._metric_value_backend.get() == 0
+
 
 class TestGauge:
 

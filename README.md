@@ -157,6 +157,16 @@ with counter.count_exceptions():
 # you can specify which exceptions to watch for
 with counter.count_exceptions((IndexError, ValueError)):
     raise ValueError. # increases counter by 1
+
+# it is possible to use the counter as a decorator as a shortcut to count exceptions
+@counter
+def test():
+    raise ValueError  # increases counter by 1 when called
+
+# specifying which exceptions to look for also works with the decorator
+@counter(exceptions=(IndexError, ValueError))
+def test():
+    raise ValueError  # increases counter by 1 when called
 ```
 
 ---

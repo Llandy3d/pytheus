@@ -290,6 +290,23 @@ class Counter(_Metric):
             self.inc()
             raise
 
+    def __call__(
+        self,
+        func: Callable = None,
+        exceptions: type[Exception] | tuple[Exception] | None = None,
+    ):
+        """
+        When called acts as a decorator counting exceptions raised.
+        """
+        if func is None:
+            return functools.partial(self.__call__, exceptions=exceptions)
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            with self.count_exceptions(exceptions):
+                return func(*args, **kwargs)
+        return wrapper
+
     def collect(self) -> Sample:
         self._raise_if_cannot_observe()
         sample = Sample('', self._labels, self._metric_value_backend.get())
