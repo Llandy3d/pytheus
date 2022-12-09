@@ -336,6 +336,19 @@ class Gauge(_Metric):
         yield
         self.dec()
 
+    # TODO: this could be configured to allow the decoration to be used
+    # with track_inprogress giving more flexibility.
+    def __call__(self, func: Callable):
+        """
+        When called acts as a decorator tracking the time taken by
+        the wrapped function.
+        """
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            with self.time():
+                return func(*args, **kwargs)
+        return wrapper
+
     @contextmanager
     def time(self) -> Generator[None, None, None]:
         """

@@ -357,6 +357,14 @@ class TestGauge:
             pass
         assert gauge._metric_value_backend.get() != 0
 
+    def test_as_decorator(self, gauge):
+        @gauge
+        def test():
+            pass
+
+        test()
+        assert gauge._metric_value_backend.get() != 0
+
 
 class TestHistogram:
 
