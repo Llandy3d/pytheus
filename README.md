@@ -192,6 +192,11 @@ with gauge.track_inprogress():
 # you can also time a piece of code, will set the duration in seconds to value when exited
 with gauge.time():
     do_something()
+
+# tracking time can also be done as a decorator
+@gauge
+def do_something():
+    ...
 ```
 
 ---
@@ -216,6 +221,11 @@ histogram.observe(0.4)
 # you can also time a piece of code, will set the duration in seconds to value when exited
 with histogram.time():
     do_something()
+
+# tracking time can also be done as a decorator
+@histogram
+def do_something():
+    ...
 ```
 
 
