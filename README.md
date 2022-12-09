@@ -115,16 +115,18 @@ histogram = Histogram('page_visits_latency_seconds', 'used for testing')
 def metrics():
     return generate_metrics()
 
+# track time with the context manager
 @app.route('/')
 def home():
     with histogram.time():
         return 'hello world!'
 
+# you can also track time with the decorator shortcut
 @app.route('/slow')
+@histogram
 def slow():
-    with histogram.time():
-        time.sleep(3)
-        return 'hello world! from slow!'
+    time.sleep(3)
+    return 'hello world! from slow!'
 
 app.run(host='0.0.0.0', port=8080)
 ```

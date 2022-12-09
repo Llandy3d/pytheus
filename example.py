@@ -21,7 +21,6 @@ app = Flask(__name__)
 
 histogram = Histogram('page_visits_latency_seconds', 'used for testing')
 histogram_labeled = Histogram('page_visits_latency_seconds_labeled', 'used for testing', required_labels=['speed'], default_labels={'speed': 'normal'})
-# counter = Counter('page_visits_total', 'total number of page visits')
 
 
 @app.route('/metrics')
@@ -29,6 +28,7 @@ def metrics():
     return generate_metrics()
 
 
+# track time with the context manager
 @app.route('/')
 def home():
     with histogram.time():
@@ -36,12 +36,13 @@ def home():
             return 'hello world!'
 
 
+# you can also track time with the decorator shortcut
 @app.route('/slow')
+@histogram
+@histogram_labeled.labels({'speed': 'slow'})
 def slow():
-    with histogram.time():
-        with histogram_labeled.labels({'speed': 'slow'}).time():
-            time.sleep(3)
-            return 'hello world! from slow!'
+    time.sleep(3)
+    return 'hello world! from slow!'
 
 
 app.run(host='0.0.0.0', port=8080)
