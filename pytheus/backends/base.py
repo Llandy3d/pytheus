@@ -79,7 +79,7 @@ def _import_backend_class(full_import_path: str) -> type[Backend]:
 def load_backend(
     backend_class: type[Backend] | None = None,
     backend_config: BackendConfig | None = None,
-):
+) -> None:
     # Load default backend class
     global BACKEND_CLASS
     backend_class_env_var: str = "PYTHEUS_BACKEND_CLASS"

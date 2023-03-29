@@ -19,13 +19,13 @@ class MultipleProcessRedisBackend(Backend):
     Note: currently not expiring keys
     """
 
-    CONNECTION_POOL: redis.Redis = None
+    CONNECTION_POOL: redis.Redis | None = None
 
     def __init__(
         self,
         config: BackendConfig,
         metric: '_Metric',
-        histogram_bucket: float = None
+        histogram_bucket: float | None = None
     ) -> None:
         super().__init__(config, metric)
         self._key_name = self.metric._collector.name
@@ -39,7 +39,7 @@ class MultipleProcessRedisBackend(Backend):
         # default labels
         joint_labels = None
         if self.metric._collector._default_labels_count:
-            joint_labels = self.metric._collector._default_labels.copy()
+            joint_labels = self.metric._collector._default_labels.copy()  # type: ignore
             if self.metric._labels:
                 joint_labels.update(self.metric._labels)
 
@@ -58,24 +58,28 @@ class MultipleProcessRedisBackend(Backend):
         return True  # TODO
 
     def inc(self, value: float) -> None:
+        assert self.CONNECTION_POOL is not None
         if self._labels_hash:
             self.CONNECTION_POOL.hincrbyfloat(self._key_name, self._labels_hash, value)
         else:
             self.CONNECTION_POOL.incrbyfloat(self._key_name, value)
 
     def dec(self, value: float) -> None:
+        assert self.CONNECTION_POOL is not None
         if self._labels_hash:
             self.CONNECTION_POOL.hincrbyfloat(self._key_name, self._labels_hash, -value)
         else:
             self.CONNECTION_POOL.incrbyfloat(self._key_name, -value)
 
     def set(self, value: float) -> None:
+        assert self.CONNECTION_POOL is not None
         if self._labels_hash:
             self.CONNECTION_POOL.hset(self._key_name, self._labels_hash, value)
         else:
             self.CONNECTION_POOL.set(self._key_name, value)
 
     def get(self) -> float:
+        assert self.CONNECTION_POOL is not None
         if self._labels_hash:
             value = self.CONNECTION_POOL.hget(self._key_name, self._labels_hash)
         else:
