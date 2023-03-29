@@ -21,7 +21,7 @@ class Backend(ABC):
         self,
         config: BackendConfig,
         metric: '_Metric',
-        histogram_bucket: float = None
+        histogram_bucket: float | None = None
     ) -> None:
         self.metric = metric
         if self.is_valid_config(config):
@@ -53,7 +53,7 @@ class Backend(ABC):
         return 0.0
 
 
-def _import_backend_class(full_import_path: str) -> Backend:
+def _import_backend_class(full_import_path: str) -> type[Backend]:
     try:
         module_path, class_name = full_import_path.rsplit(".", 1)
     except ValueError:  # Empty string or not full path to the class
@@ -77,17 +77,15 @@ def _import_backend_class(full_import_path: str) -> Backend:
 
 
 def load_backend(
-    backend_class: Backend | None = None,
-    backend_config: Backend | None = None,
+    backend_class: type[Backend] | None = None,
+    backend_config: BackendConfig | None = None,
 ):
-
     # Load default backend class
     global BACKEND_CLASS
     backend_class_env_var: str = "PYTHEUS_BACKEND_CLASS"
     if backend_class is not None:  # Explicit
         BACKEND_CLASS = backend_class
     elif backend_class_env_var in os.environ:  # Environment
-        class_name = os.environ[backend_class_env_var]
         BACKEND_CLASS = _import_backend_class(os.environ[backend_class_env_var])
     else:  # Default
         BACKEND_CLASS = SingleProcessBackend
@@ -107,7 +105,7 @@ def load_backend(
         BACKEND_CONFIG = {}  # Default
 
 
-def get_backend(metric: '_Metric', histogram_bucket: float = None) -> Backend:
+def get_backend(metric: '_Metric', histogram_bucket: float | None = None) -> Backend:
     # Probably ok not to cache this and allow each metric to keep its own
     return BACKEND_CLASS(BACKEND_CONFIG, metric, histogram_bucket=histogram_bucket)
 
@@ -119,7 +117,7 @@ class SingleProcessBackend(Backend):
         self,
         config: BackendConfig,
         metric: '_Metric',
-        histogram_bucket: float = None
+        histogram_bucket: float | None = None
     ) -> None:
         super().__init__(config, metric)
         self._value = 0.0
@@ -148,15 +146,15 @@ class SingleProcessBackend(Backend):
 class MultipleProcessFileBackend(Backend):
     """Provides a multi-process backend that uses MMAP files."""
 
-    def is_valid_config(self, config: BackendConfig) -> True:
-        return True  # TODO
+    def is_valid_config(self, config: BackendConfig) -> bool:
+        raise NotImplementedError  # TODO
 
     def inc(self, value: float) -> None:
-        pass  # TODO
+        raise NotImplementedError  # TODO
 
     def get(self) -> float:
-        pass  # TODO
+        raise NotImplementedError  # TODO
 
 
-BACKEND_CLASS: Backend
+BACKEND_CLASS: type[Backend]
 BACKEND_CONFIG: BackendConfig
