@@ -9,6 +9,9 @@ if TYPE_CHECKING:
     from pytheus.metrics import _Metric, Histogram
 
 
+EXPIRE_KEY_TIME = 3600  # 1 hour
+
+
 class MultipleProcessRedisBackend(Backend):
     """
     Provides a multi-process backend that uses Redis.
@@ -16,7 +19,6 @@ class MultipleProcessRedisBackend(Backend):
     metrics will be stored in an hash.
     Currently is very naive, and there is a lot of room for improvement.
     (ex. maybe store all dimensions in the same hash and be smart on retrieving everything...)
-    Note: currently not expiring keys
     """
 
     CONNECTION_POOL: redis.Redis | None = None
@@ -64,6 +66,8 @@ class MultipleProcessRedisBackend(Backend):
         else:
             self.CONNECTION_POOL.incrbyfloat(self._key_name, value)
 
+        self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
+
     def dec(self, value: float) -> None:
         assert self.CONNECTION_POOL is not None
         if self._labels_hash:
@@ -71,12 +75,16 @@ class MultipleProcessRedisBackend(Backend):
         else:
             self.CONNECTION_POOL.incrbyfloat(self._key_name, -value)
 
+        self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
+
     def set(self, value: float) -> None:
         assert self.CONNECTION_POOL is not None
         if self._labels_hash:
             self.CONNECTION_POOL.hset(self._key_name, self._labels_hash, value)
         else:
             self.CONNECTION_POOL.set(self._key_name, value)
+
+        self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
 
     def get(self) -> float:
         assert self.CONNECTION_POOL is not None
