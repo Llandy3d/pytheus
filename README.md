@@ -168,7 +168,7 @@ counter.inc(7)
 # it is possible to count exceptions
 with counter.count_exceptions():
     raise ValueError  # increases counter by 1
-    
+
 # you can specify which exceptions to watch for
 with counter.count_exceptions((IndexError, ValueError)):
     raise ValueError. # increases counter by 1
@@ -213,7 +213,7 @@ gauge.set_to_current_time()
 # it is possible to track progress so that when entered increases the value by 1, and when exited decreases it
 with gauge.track_inprogress():
     do_something()
-    
+
 # you can also time a piece of code, will set the duration in seconds to value when exited
 with gauge.time():
     do_something()
@@ -242,7 +242,7 @@ histogram = Histogram(name="my_histogram", description="My description", buckets
 
 # observe a value
 histogram.observe(0.4)
-    
+
 # you can also time a piece of code, will set the duration in seconds to value when exited
 with histogram.time():
     do_something()
