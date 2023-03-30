@@ -17,6 +17,11 @@ repository = "https://github.com/Llandy3d/pytheus"
 [project.optional-dependencies]
 test = [
   "pytest >= 7.0.0",
+  "mypy == 1.1.1",
+  "ruff == 0.0.260",
+
+  # mypy types
+  "types-redis == 4.5.4.0",
 ]
 
 redis = [
@@ -31,3 +36,6 @@ exclude = ["venv", "example.py"]
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+[tool.ruff]
+line-length = 100
