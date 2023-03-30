@@ -20,10 +20,10 @@ class Collector(Protocol):
 class Registry(Protocol):
     prefix: str | None
 
-    def register(self, collector: Collector):
+    def register(self, collector: Collector) -> None:
         ...
 
-    def unregister(self, collector: Collector):
+    def unregister(self, collector: Collector) -> None:
         ...
 
     def collect(self) -> Iterable:
@@ -31,7 +31,7 @@ class Registry(Protocol):
 
 
 class CollectorRegistry:
-    def __init__(self, prefix: str = None) -> None:
+    def __init__(self, prefix: str | None = None) -> None:
         self._lock = Lock()
         self.prefix = prefix
         self._collectors: dict[str, Collector] = {}
@@ -55,7 +55,7 @@ class CollectorRegistry:
 
 
 class CollectorRegistryProxy:
-    def __init__(self, registry: Registry = None) -> None:
+    def __init__(self, registry: Registry | None = None) -> None:
         self._registry = registry or CollectorRegistry()
         self.prefix = self._registry.prefix
 
