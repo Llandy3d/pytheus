@@ -6,7 +6,10 @@ from abc import ABC, abstractmethod
 from threading import Lock
 from typing import Any, TYPE_CHECKING
 
-from pytheus.exceptions import InvalidBackendClassException, InvalidBackendConfigException
+from pytheus.exceptions import (
+    InvalidBackendClassException,
+    InvalidBackendConfigException,
+)
 
 
 if TYPE_CHECKING:
@@ -20,8 +23,8 @@ class Backend(ABC):
     def __init__(
         self,
         config: BackendConfig,
-        metric: '_Metric',
-        histogram_bucket: str | None = None
+        metric: "_Metric",
+        histogram_bucket: str | None = None,
     ) -> None:
         self.metric = metric
         if self.is_valid_config(config):
@@ -64,11 +67,15 @@ def _import_backend_class(full_import_path: str) -> type[Backend]:
     try:
         module = importlib.import_module(module_path)
     except ImportError as e:
-        raise InvalidBackendClassException(f"Module '{module_path}' could not be imported: {e}")
+        raise InvalidBackendClassException(
+            f"Module '{module_path}' could not be imported: {e}"
+        )
     try:
         cls = getattr(module, class_name)
         if not issubclass(cls, Backend):
-            raise InvalidBackendClassException(f"Class '{class_name}' is not a Backend subclass")
+            raise InvalidBackendClassException(
+                f"Class '{class_name}' is not a Backend subclass"
+            )
         return cls
     except AttributeError:
         raise InvalidBackendClassException(
@@ -105,7 +112,7 @@ def load_backend(
         BACKEND_CONFIG = {}  # Default
 
 
-def get_backend(metric: '_Metric', histogram_bucket: str | None = None) -> Backend:
+def get_backend(metric: "_Metric", histogram_bucket: str | None = None) -> Backend:
     # Probably ok not to cache this and allow each metric to keep its own
     return BACKEND_CLASS(BACKEND_CONFIG, metric, histogram_bucket=histogram_bucket)
 
@@ -116,8 +123,8 @@ class SingleProcessBackend(Backend):
     def __init__(
         self,
         config: BackendConfig,
-        metric: '_Metric',
-        histogram_bucket: str | None = None
+        metric: "_Metric",
+        histogram_bucket: str | None = None,
     ) -> None:
         super().__init__(config, metric)
         self._value = 0.0

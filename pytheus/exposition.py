@@ -24,7 +24,7 @@ def generate_metrics(registry: Registry = REGISTRY) -> str:
 
 def format_labels(labels: Labels | None) -> str:
     if not labels:
-        return ''
+        return ""
     label_str = (f'{name}="{value}"' for name, value in labels.items())
     return f"{{{LABEL_SEPARATOR.join(label_str)}}}"
 
@@ -33,7 +33,7 @@ def generate_from_collector(collector: Collector, prefix: str | None = None) -> 
     """
     Returns the metrics from a given collector in prometheus text format
     """
-    metric_name = f'{prefix}_{collector.name}' if prefix else collector.name
+    metric_name = f"{prefix}_{collector.name}" if prefix else collector.name
     help_text = f"# HELP {metric_name} {collector.description}"
     type_text = f"# TYPE {metric_name} {collector.type_}"
     output = [help_text, type_text]
@@ -49,14 +49,14 @@ def make_wsgi_app(registry: Registry = REGISTRY) -> Callable:
     """Create a WSGI app which serves the metrics from a registry."""
 
     def prometheus_app(environ, start_response):  # type: ignore
-        status = '200 OK'
-        if environ['PATH_INFO'] == '/favicon.ico':
+        status = "200 OK"
+        if environ["PATH_INFO"] == "/favicon.ico":
             # Serve empty response for browsers
-            headers = [('', '')]
-            output = ''
+            headers = [("", "")]
+            output = ""
         else:
             output = generate_metrics(registry)
-            headers = [('Content-Type', PROMETHEUS_CONTENT_TYPE)]
+            headers = [("Content-Type", PROMETHEUS_CONTENT_TYPE)]
         start_response(status, headers)
         return [output.encode()]
 

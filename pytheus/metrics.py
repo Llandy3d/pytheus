@@ -20,8 +20,8 @@ from pytheus.registry import REGISTRY, Registry
 Labels = dict[str, str]
 
 
-metric_name_re = re.compile(r'[a-zA-Z_:][a-zA-Z0-9_:]*')
-label_name_re = re.compile(r'[a-zA-Z_][a-zA-Z0-9_]*')
+metric_name_re = re.compile(r"[a-zA-Z_:][a-zA-Z0-9_:]*")
+label_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*")
 
 
 @dataclass
@@ -42,13 +42,13 @@ class _MetricCollector:
         self,
         name: str,
         description: str,
-        metric: '_Metric',
+        metric: "_Metric",
         required_labels: Sequence[str] | None = None,
         default_labels: Labels | None = None,
-        registry: Registry = REGISTRY
+        registry: Registry = REGISTRY,
     ) -> None:
         if metric_name_re.fullmatch(name) is None:
-            raise ValueError(f'Invalid metric name: {name}')
+            raise ValueError(f"Invalid metric name: {name}")
 
         if required_labels:
             is_histogram = isinstance(metric, Histogram)
@@ -72,16 +72,20 @@ class _MetricCollector:
         # TODO check maybe a proper MetricTypes should to be defined
         return str.lower(self._metric.__class__.__name__)
 
-    def _validate_required_labels(self, labels: Sequence[str], is_histogram: bool = False) -> None:
+    def _validate_required_labels(
+        self, labels: Sequence[str], is_histogram: bool = False
+    ) -> None:
         """
         Validates label names according to the regex.
         Labels starting with `__` are reserved for internal use by Prometheus.
         """
         for label in labels:
-            if label.startswith('__') or label_name_re.fullmatch(label) is None:
-                raise LabelValidationException(f'Invalid label name: {label}')
-            if is_histogram and label == 'le':
-                raise LabelValidationException(f'Invalid label name for Histogram: {label}')
+            if label.startswith("__") or label_name_re.fullmatch(label) is None:
+                raise LabelValidationException(f"Invalid label name: {label}")
+            if is_histogram and label == "le":
+                raise LabelValidationException(
+                    f"Invalid label name for Histogram: {label}"
+                )
 
     def _validate_labels(self, labels: Labels) -> None:
         """
@@ -90,13 +94,15 @@ class _MetricCollector:
         `labels` will be also validated to be a subset of `required_labels`.
         """
         if not self._required_labels:
-            raise LabelValidationException('trying to use labels while required_labels is None')
+            raise LabelValidationException(
+                "trying to use labels while required_labels is None"
+            )
 
         labels_set = set(labels.keys())
         if not labels_set.issubset(self._required_labels):
             raise LabelValidationException(
-                'labels different than required_labels: '
-                f'{labels_set} != {self._required_labels}'
+                "labels different than required_labels: "
+                f"{labels_set} != {self._required_labels}"
             )
 
     def collect(self) -> Iterable[Sample]:
@@ -105,9 +111,15 @@ class _MetricCollector:
         """
         labeled_metrics: Iterable[Sample]
         if self._required_labels:
-            labeled_metrics = (sample for metric in self._labeled_metrics.values() for sample in metric.collect())
+            labeled_metrics = (
+                sample
+                for metric in self._labeled_metrics.values()
+                for sample in metric.collect()
+            )
             if self._default_labels and self._metric._can_observe:
-                labeled_metrics = itertools.chain(labeled_metrics, self._metric.collect())
+                labeled_metrics = itertools.chain(
+                    labeled_metrics, self._metric.collect()
+                )
             return labeled_metrics
         else:
             return self._metric.collect()
@@ -130,14 +142,16 @@ class _Metric:
         self._collector = (
             collector
             if collector
-            else _MetricCollector(name, description, self, required_labels, default_labels)
+            else _MetricCollector(
+                name, description, self, required_labels, default_labels
+            )
         )
         self._can_observe = self._check_can_observe()
 
         if not collector and labels:
             raise LabelValidationException(
-                'Setting labels when creating a metric is not allowed. '
-                'You might be looking for default_labels.'
+                "Setting labels when creating a metric is not allowed. "
+                "You might be looking for default_labels."
             )
 
         if self._can_observe and not isinstance(self, Histogram):
@@ -174,7 +188,7 @@ class _Metric:
         if not self._can_observe:
             raise UnobservableMetricException
 
-    def labels(self, labels_: Labels) -> '_Metric':
+    def labels(self, labels_: Labels) -> "_Metric":
         """
         If no labels is passed to the call returns itself.
         If there are already present labels, they will be updated with the passed labels_ and if
@@ -203,10 +217,7 @@ class _Metric:
         if labels_count != len(self._collector._required_labels):
             # does not add to collector
             return self.__class__(
-                self._name,
-                self._description,
-                collector=self._collector,
-                labels=labels_
+                self._name, self._description, collector=self._collector, labels=labels_
             )
 
         # add to collector
@@ -215,10 +226,7 @@ class _Metric:
             metric = self._collector._labeled_metrics[sorted_label_values]
         else:
             metric = self.__class__(
-                self._name,
-                self._description,
-                collector=self._collector,
-                labels=labels_
+                self._name, self._description, collector=self._collector, labels=labels_
             )
             self._collector._labeled_metrics[sorted_label_values] = metric
         return metric
@@ -229,7 +237,7 @@ class _Metric:
     def _get_sample(self) -> Sample:
         """Get a Sample for testing. Each metric type will need to define its own."""
         self._raise_if_cannot_observe()
-        sample = Sample('', self._labels, 0)
+        sample = Sample("", self._labels, 0)
         return self._add_default_labels_to_sample(sample)
 
     def _add_default_labels_to_sample(self, sample: Sample) -> Sample:
@@ -243,11 +251,10 @@ class _Metric:
         return sample
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__qualname__}({self._collector.name})'
+        return f"{self.__class__.__qualname__}({self._collector.name})"
 
 
 class Counter(_Metric):
-
     def inc(self, value: float = 1.0) -> None:
         """
         Increments the value by the given amount.
@@ -256,7 +263,7 @@ class Counter(_Metric):
         """
         self._raise_if_cannot_observe()
         if value < 0:
-            raise ValueError(f'Counter increase value ({value}) must be >= 0')
+            raise ValueError(f"Counter increase value ({value}) must be >= 0")
 
         assert self._metric_value_backend is not None
         self._metric_value_backend.inc(value)
@@ -264,8 +271,7 @@ class Counter(_Metric):
     # TODO: consider adding decorator support
     @contextmanager
     def count_exceptions(
-        self,
-        exceptions: type[Exception] | tuple[Exception] | None = None
+        self, exceptions: type[Exception] | tuple[Exception] | None = None
     ) -> Generator[None, None, None]:
         """
         Will count and reraise raised exceptions.
@@ -296,17 +302,17 @@ class Counter(_Metric):
         def wrapper(*args, **kwargs):  # type: ignore
             with self.count_exceptions(exceptions):
                 return func(*args, **kwargs)
+
         return wrapper
 
     def collect(self) -> Iterable[Sample]:
         self._raise_if_cannot_observe()
         assert self._metric_value_backend is not None
-        sample = Sample('', self._labels, self._metric_value_backend.get())
+        sample = Sample("", self._labels, self._metric_value_backend.get())
         return (self._add_default_labels_to_sample(sample),)
 
 
 class Gauge(_Metric):
-
     def inc(self, value: float = 1.0) -> None:
         """
         Increments the value by the given amount.
@@ -356,10 +362,12 @@ class Gauge(_Metric):
         When called acts as a decorator tracking the time taken by
         the wrapped function.
         """
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):  # type: ignore
             with self.time():
                 return func(*args, **kwargs)
+
         return wrapper
 
     @contextmanager
@@ -375,7 +383,7 @@ class Gauge(_Metric):
     def collect(self) -> Iterable[Sample]:
         self._raise_if_cannot_observe()
         assert self._metric_value_backend is not None
-        sample = Sample('', self._labels, self._metric_value_backend.get())
+        sample = Sample("", self._labels, self._metric_value_backend.get())
         return (self._add_default_labels_to_sample(sample),)
 
 
@@ -383,7 +391,7 @@ class Histogram(_Metric):
     # Default buckets are tailored to broadly measure the response time (in seconds) of a network
     # service. Most likely you will be required to define buckets customized to your use case.
     # Valus taken from the golang/rust client.
-    DEFAULT_BUCKETS = (.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10)
+    DEFAULT_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10)
 
     def __init__(
         self,
@@ -415,12 +423,12 @@ class Histogram(_Metric):
         sorted_buckets = sorted(buckets)
         if buckets != sorted_buckets:
             raise BucketException(
-                f'buckets values are not in sorted order. {buckets} != {sorted_buckets}'
+                f"buckets values are not in sorted order. {buckets} != {sorted_buckets}"
             )
 
         # +inf is required so we always add it
-        if buckets[-1] != float('inf'):
-            buckets.append(float('inf'))
+        if buckets[-1] != float("inf"):
+            buckets.append(float("inf"))
 
         self._upper_bounds = buckets
 
@@ -433,8 +441,8 @@ class Histogram(_Metric):
 
             # this will be added just to the default name on the redis backend but it is
             # fine for now as it's the only one. Might require a more robust way in the future.
-            self._sum = get_backend(self, histogram_bucket='sum')
-            self._count = get_backend(self, histogram_bucket='count')
+            self._sum = get_backend(self, histogram_bucket="sum")
+            self._count = get_backend(self, histogram_bucket="count")
 
             for bucket in self._upper_bounds:
                 self._buckets.append(get_backend(self, histogram_bucket=str(bucket)))
@@ -471,10 +479,12 @@ class Histogram(_Metric):
         When called acts as a decorator tracking the time taken by
         the wrapped function.
         """
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):  # type: ignore
             with self.time():
                 return func(*args, **kwargs)
+
         return wrapper
 
     def collect(self) -> Iterable[Sample]:
@@ -482,14 +492,14 @@ class Histogram(_Metric):
         samples = []
         for i, bound in enumerate(self._upper_bounds):
             bucket_labels = self._labels.copy() if self._labels else {}
-            bucket_labels['le'] = str(bound)
-            sample = Sample('_bucket', bucket_labels, self._buckets[i].get())
+            bucket_labels["le"] = str(bound)
+            sample = Sample("_bucket", bucket_labels, self._buckets[i].get())
             samples.append(sample)
 
         assert self._sum is not None
         assert self._count is not None
-        samples.append(Sample('_sum', self._labels, self._sum.get()))
-        samples.append(Sample('_count', self._labels, self._count.get()))
+        samples.append(Sample("_sum", self._labels, self._sum.get()))
+        samples.append(Sample("_count", self._labels, self._count.get()))
 
         return (self._add_default_labels_to_sample(sample) for sample in samples)
 

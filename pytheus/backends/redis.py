@@ -26,8 +26,8 @@ class MultipleProcessRedisBackend(Backend):
     def __init__(
         self,
         config: BackendConfig,
-        metric: '_Metric',
-        histogram_bucket: str | None = None
+        metric: "_Metric",
+        histogram_bucket: str | None = None,
     ) -> None:
         super().__init__(config, metric)
         self._key_name = self.metric._collector.name
@@ -36,7 +36,7 @@ class MultipleProcessRedisBackend(Backend):
 
         # keys for histograms are of type `myhisto:2.5`
         if histogram_bucket:
-            self._key_name = f'{self._key_name}:{histogram_bucket}'
+            self._key_name = f"{self._key_name}:{histogram_bucket}"
 
         # default labels
         joint_labels = None
@@ -46,9 +46,9 @@ class MultipleProcessRedisBackend(Backend):
                 joint_labels.update(self.metric._labels)
 
         if joint_labels:
-            self._labels_hash = '-'.join(sorted(joint_labels.values()))
+            self._labels_hash = "-".join(sorted(joint_labels.values()))
         elif self.metric._labels:
-            self._labels_hash = '-'.join(sorted(self.metric._labels.values()))
+            self._labels_hash = "-".join(sorted(self.metric._labels.values()))
 
         if self.CONNECTION_POOL is None:
             MultipleProcessRedisBackend.CONNECTION_POOL = redis.Redis(
