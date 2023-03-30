@@ -29,7 +29,7 @@ def format_labels(labels: Labels | None) -> str:
     return f"{{{LABEL_SEPARATOR.join(label_str)}}}"
 
 
-def generate_from_collector(collector: Collector, prefix: str = None) -> str:
+def generate_from_collector(collector: Collector, prefix: str | None = None) -> str:
     """
     Returns the metrics from a given collector in prometheus text format
     """
@@ -48,7 +48,7 @@ def generate_from_collector(collector: Collector, prefix: str = None) -> str:
 def make_wsgi_app(registry: Registry = REGISTRY) -> Callable:
     """Create a WSGI app which serves the metrics from a registry."""
 
-    def prometheus_app(environ, start_response):
+    def prometheus_app(environ, start_response):  # type: ignore
         status = '200 OK'
         if environ['PATH_INFO'] == '/favicon.ico':
             # Serve empty response for browsers
