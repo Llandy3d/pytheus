@@ -6,7 +6,7 @@ import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Sequence, Iterator, Callable
+from typing import Sequence, Iterable, Callable
 
 from pytheus.backends import get_backend
 from pytheus.exceptions import (
@@ -99,30 +99,18 @@ class _MetricCollector:
                 f'{labels_set} != {self._required_labels}'
             )
 
-    def collect(self) -> Iterator[Sample]:
+    def collect(self) -> Iterable[Sample]:
         """
         Collects Samples for the metric.
         """
-        labeled_metrics: Iterator[Sample]
+        labeled_metrics: Iterable[Sample]
         if self._required_labels:
-            labeled_metrics = (metric.collect() for metric in self._labeled_metrics.values())
-            if isinstance(self._metric, Histogram):
-                # as histograms collect returns an iterator, we flatten it
-                labeled_metrics = (sample for metric in labeled_metrics for sample in metric)
+            labeled_metrics = (sample for metric in self._labeled_metrics.values() for sample in metric.collect())
             if self._default_labels and self._metric._can_observe:
-                # NOTE: a lot of these checks or duplication could be removed if all collect()
-                # would return an Iterator
-                if isinstance(self._metric, Histogram):
-                    labeled_metrics = itertools.chain(labeled_metrics, self._metric.collect())
-                else:
-                    labeled_metrics = itertools.chain(labeled_metrics, (self._metric.collect(),))
+                labeled_metrics = itertools.chain(labeled_metrics, self._metric.collect())
             return labeled_metrics
         else:
-            # histograms return already an iterator of Samples
-            if isinstance(self._metric, Histogram):
-                return self._metric.collect()
-            else:
-                return iter((self._metric.collect(),))
+            return self._metric.collect()
 
 
 class _Metric:
@@ -235,7 +223,7 @@ class _Metric:
             self._collector._labeled_metrics[sorted_label_values] = metric
         return metric
 
-    def collect(self) -> Sample:
+    def collect(self) -> Iterable[Sample]:
         raise NotImplementedError
 
     def _get_sample(self) -> Sample:
@@ -310,11 +298,11 @@ class Counter(_Metric):
                 return func(*args, **kwargs)
         return wrapper
 
-    def collect(self) -> Sample:
+    def collect(self) -> Iterable[Sample]:
         self._raise_if_cannot_observe()
         assert self._metric_value_backend is not None
         sample = Sample('', self._labels, self._metric_value_backend.get())
-        return self._add_default_labels_to_sample(sample)
+        return (self._add_default_labels_to_sample(sample),)
 
 
 class Gauge(_Metric):
@@ -384,11 +372,11 @@ class Gauge(_Metric):
         yield
         self.set(time.perf_counter() - start)
 
-    def collect(self) -> Sample:
+    def collect(self) -> Iterable[Sample]:
         self._raise_if_cannot_observe()
         assert self._metric_value_backend is not None
         sample = Sample('', self._labels, self._metric_value_backend.get())
-        return self._add_default_labels_to_sample(sample)
+        return (self._add_default_labels_to_sample(sample),)
 
 
 class Histogram(_Metric):
@@ -489,7 +477,7 @@ class Histogram(_Metric):
                 return func(*args, **kwargs)
         return wrapper
 
-    def collect(self) -> Iterator[Sample]:
+    def collect(self) -> Iterable[Sample]:
         self._raise_if_cannot_observe()
         samples = []
         for i, bound in enumerate(self._upper_bounds):
