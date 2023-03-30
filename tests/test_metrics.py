@@ -1,12 +1,13 @@
 import time
+
 import pytest
 
 from pytheus.exceptions import (
     BucketException,
-    UnobservableMetricException,
     LabelValidationException,
+    UnobservableMetricException,
 )
-from pytheus.metrics import _MetricCollector, _Metric, Counter, Gauge, Histogram
+from pytheus.metrics import Counter, Gauge, Histogram, _Metric, _MetricCollector
 
 
 class TestMetricCollector:

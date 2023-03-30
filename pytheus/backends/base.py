@@ -1,16 +1,14 @@
 import importlib
 import json
 import os
-
 from abc import ABC, abstractmethod
 from threading import Lock
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pytheus.exceptions import (
     InvalidBackendClassException,
     InvalidBackendConfigException,
 )
-
 
 if TYPE_CHECKING:
     from pytheus.metrics import _Metric

@@ -2,20 +2,18 @@ import functools
 import itertools
 import re
 import time
-
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Sequence, Iterable, Callable
+from typing import Callable, Iterable, Sequence
 
 from pytheus.backends import get_backend
 from pytheus.exceptions import (
-    UnobservableMetricException,
-    LabelValidationException,
     BucketException,
+    LabelValidationException,
+    UnobservableMetricException,
 )
 from pytheus.registry import REGISTRY, Registry
-
 
 Labels = dict[str, str]
 

@@ -1,9 +1,8 @@
-import redis
-
 from typing import TYPE_CHECKING
 
-from pytheus.backends.base import Backend, BackendConfig
+import redis
 
+from pytheus.backends.base import Backend, BackendConfig
 
 if TYPE_CHECKING:
     from pytheus.metrics import _Metric

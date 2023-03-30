@@ -1,11 +1,11 @@
 import time
+
 from flask import Flask
-from pytheus.metrics import Histogram
-from pytheus.exposition import generate_metrics
 
 from pytheus.backends import load_backend
 from pytheus.backends.redis import MultipleProcessRedisBackend
-
+from pytheus.exposition import generate_metrics
+from pytheus.metrics import Histogram
 
 load_backend(
     backend_class=MultipleProcessRedisBackend,
