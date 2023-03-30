@@ -72,7 +72,7 @@ class _MetricCollector:
         # TODO check maybe a proper MetricTypes should to be defined
         return str.lower(self._metric.__class__.__name__)
 
-    def _validate_required_labels(self, labels: Sequence[str], is_histogram: bool = False):
+    def _validate_required_labels(self, labels: Sequence[str], is_histogram: bool = False) -> None:
         """
         Validates label names according to the regex.
         Labels starting with `__` are reserved for internal use by Prometheus.
@@ -83,7 +83,7 @@ class _MetricCollector:
             if is_histogram and label == 'le':
                 raise LabelValidationException(f'Invalid label name for Histogram: {label}')
 
-    def _validate_labels(self, labels: Labels):
+    def _validate_labels(self, labels: Labels) -> None:
         """
         Validates labels.
         If no `required_labels` is set raises an error.
@@ -103,6 +103,7 @@ class _MetricCollector:
         """
         Collects Samples for the metric.
         """
+        labeled_metrics: Iterator[Sample]
         if self._required_labels:
             labeled_metrics = (metric.collect() for metric in self._labeled_metrics.values())
             if isinstance(self._metric, Histogram):
@@ -210,6 +211,7 @@ class _Metric:
         else:
             labels_count = len(labels_)
 
+        assert self._collector._required_labels is not None
         if labels_count != len(self._collector._required_labels):
             # does not add to collector
             return self.__class__(
@@ -245,7 +247,7 @@ class _Metric:
     def _add_default_labels_to_sample(self, sample: Sample) -> Sample:
         """Adds default labels if available to a sample."""
         if self._collector._default_labels_count:
-            joint_labels = self._collector._default_labels.copy()
+            joint_labels = self._collector._default_labels.copy()  # type: ignore
             if sample.labels:
                 joint_labels.update(sample.labels)
             sample.labels = joint_labels
@@ -268,6 +270,7 @@ class Counter(_Metric):
         if value < 0:
             raise ValueError(f'Counter increase value ({value}) must be >= 0')
 
+        assert self._metric_value_backend is not None
         self._metric_value_backend.inc(value)
 
     # TODO: consider adding decorator support
@@ -292,9 +295,9 @@ class Counter(_Metric):
 
     def __call__(
         self,
-        func: Callable = None,
+        func: Callable | None = None,
         exceptions: type[Exception] | tuple[Exception] | None = None,
-    ):
+    ) -> Callable:
         """
         When called acts as a decorator counting exceptions raised.
         """
@@ -302,13 +305,14 @@ class Counter(_Metric):
             return functools.partial(self.__call__, exceptions=exceptions)
 
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):  # type: ignore
             with self.count_exceptions(exceptions):
                 return func(*args, **kwargs)
         return wrapper
 
     def collect(self) -> Sample:
         self._raise_if_cannot_observe()
+        assert self._metric_value_backend is not None
         sample = Sample('', self._labels, self._metric_value_backend.get())
         return self._add_default_labels_to_sample(sample)
 
@@ -321,6 +325,7 @@ class Gauge(_Metric):
         By default it will be 1.
         """
         self._raise_if_cannot_observe()
+        assert self._metric_value_backend is not None
         self._metric_value_backend.inc(value)
 
     def dec(self, value: float = 1.0) -> None:
@@ -329,6 +334,7 @@ class Gauge(_Metric):
         By default it will be 1.
         """
         self._raise_if_cannot_observe()
+        assert self._metric_value_backend is not None
         self._metric_value_backend.dec(value)
 
     def set(self, value: float) -> None:
@@ -336,11 +342,13 @@ class Gauge(_Metric):
         Set the value to the given amount.
         """
         self._raise_if_cannot_observe()
+        assert self._metric_value_backend is not None
         self._metric_value_backend.set(value)
 
     def set_to_current_time(self) -> None:
         """Set the value to the current unix timestamp."""
         self._raise_if_cannot_observe()
+        assert self._metric_value_backend is not None
         self._metric_value_backend.set(time.time())
 
     @contextmanager
@@ -355,13 +363,13 @@ class Gauge(_Metric):
 
     # TODO: this could be configured to allow the decoration to be used
     # with track_inprogress giving more flexibility.
-    def __call__(self, func: Callable):
+    def __call__(self, func: Callable) -> Callable:
         """
         When called acts as a decorator tracking the time taken by
         the wrapped function.
         """
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):  # type: ignore
             with self.time():
                 return func(*args, **kwargs)
         return wrapper
@@ -378,6 +386,7 @@ class Gauge(_Metric):
 
     def collect(self) -> Sample:
         self._raise_if_cannot_observe()
+        assert self._metric_value_backend is not None
         sample = Sample('', self._labels, self._metric_value_backend.get())
         return self._add_default_labels_to_sample(sample)
 
@@ -438,6 +447,7 @@ class Histogram(_Metric):
             # fine for now as it's the only one. Might require a more robust way in the future.
             self._sum = get_backend(self, histogram_bucket='sum')
             self._count = get_backend(self, histogram_bucket='count')
+            # TODO: currently also typed as float for some reason
             # NOTE: yap might make more sente to rename it
 
             for bucket in self._upper_bounds:
@@ -450,12 +460,14 @@ class Histogram(_Metric):
         it's better to consider using two histograms for positive and negative values.
         """
         self._raise_if_cannot_observe()
+        assert self._sum is not None
         self._sum.inc(value)
 
         for i, bound in enumerate(self._upper_bounds):
             if value <= bound:
                 self._buckets[i].inc(1)
 
+        assert self._count is not None
         self._count.inc(1)
 
     @contextmanager
@@ -468,13 +480,13 @@ class Histogram(_Metric):
         yield
         self.observe(time.perf_counter() - start)
 
-    def __call__(self, func: Callable):
+    def __call__(self, func: Callable) -> Callable:
         """
         When called acts as a decorator tracking the time taken by
         the wrapped function.
         """
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):  # type: ignore
             with self.time():
                 return func(*args, **kwargs)
         return wrapper
@@ -488,6 +500,8 @@ class Histogram(_Metric):
             sample = Sample('_bucket', bucket_labels, self._buckets[i].get())
             samples.append(sample)
 
+        assert self._sum is not None
+        assert self._count is not None
         samples.append(Sample('_sum', self._labels, self._sum.get()))
         samples.append(Sample('_count', self._labels, self._count.get()))
 
