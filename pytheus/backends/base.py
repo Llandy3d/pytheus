@@ -21,7 +21,7 @@ class Backend(ABC):
         self,
         config: BackendConfig,
         metric: '_Metric',
-        histogram_bucket: float | None = None
+        histogram_bucket: str | None = None
     ) -> None:
         self.metric = metric
         if self.is_valid_config(config):
@@ -105,7 +105,7 @@ def load_backend(
         BACKEND_CONFIG = {}  # Default
 
 
-def get_backend(metric: '_Metric', histogram_bucket: float | None = None) -> Backend:
+def get_backend(metric: '_Metric', histogram_bucket: str | None = None) -> Backend:
     # Probably ok not to cache this and allow each metric to keep its own
     return BACKEND_CLASS(BACKEND_CONFIG, metric, histogram_bucket=histogram_bucket)
 
@@ -117,7 +117,7 @@ class SingleProcessBackend(Backend):
         self,
         config: BackendConfig,
         metric: '_Metric',
-        histogram_bucket: float | None = None
+        histogram_bucket: str | None = None
     ) -> None:
         super().__init__(config, metric)
         self._value = 0.0

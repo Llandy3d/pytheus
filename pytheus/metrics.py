@@ -447,11 +447,9 @@ class Histogram(_Metric):
             # fine for now as it's the only one. Might require a more robust way in the future.
             self._sum = get_backend(self, histogram_bucket='sum')
             self._count = get_backend(self, histogram_bucket='count')
-            # TODO: currently also typed as float for some reason
-            # NOTE: yap might make more sente to rename it
 
             for bucket in self._upper_bounds:
-                self._buckets.append(get_backend(self, histogram_bucket=bucket))
+                self._buckets.append(get_backend(self, histogram_bucket=str(bucket)))
 
     def observe(self, value: float) -> None:
         """
@@ -496,7 +494,7 @@ class Histogram(_Metric):
         samples = []
         for i, bound in enumerate(self._upper_bounds):
             bucket_labels = self._labels.copy() if self._labels else {}
-            bucket_labels['le'] = bound
+            bucket_labels['le'] = str(bound)
             sample = Sample('_bucket', bucket_labels, self._buckets[i].get())
             samples.append(sample)
 

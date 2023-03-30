@@ -467,7 +467,7 @@ class TestHistogram:
         samples = list(samples)
 
         assert 'le' in samples[0].labels
-        assert 0.2 in samples[0].labels.values()
+        assert '0.2' in samples[0].labels.values()
         assert len(samples) == 6  # includes float('inf')
 
     def test_osberve_unobservable_raises(self):

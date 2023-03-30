@@ -25,7 +25,7 @@ class MultipleProcessRedisBackend(Backend):
         self,
         config: BackendConfig,
         metric: '_Metric',
-        histogram_bucket: float | None = None
+        histogram_bucket: str | None = None
     ) -> None:
         super().__init__(config, metric)
         self._key_name = self.metric._collector.name
