@@ -5,10 +5,7 @@ from abc import ABC, abstractmethod
 from threading import Lock
 from typing import TYPE_CHECKING, Any
 
-from pytheus.exceptions import (
-    InvalidBackendClassException,
-    InvalidBackendConfigException,
-)
+from pytheus.exceptions import InvalidBackendClassException, InvalidBackendConfigException
 
 if TYPE_CHECKING:
     from pytheus.metrics import _Metric
