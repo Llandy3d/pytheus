@@ -26,3 +26,8 @@ redis = [
 [tool.mypy]
 disallow_untyped_defs = true
 ignore_missing_imports = true
+exclude = ["venv", "example.py"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
