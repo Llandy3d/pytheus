@@ -1,5 +1,3 @@
-import pytest
-
 from pytheus.exposition import generate_metrics
 from pytheus.metrics import Counter, Histogram
 from pytheus.registry import REGISTRY, CollectorRegistry

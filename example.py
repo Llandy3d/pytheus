@@ -1,6 +1,6 @@
 import time
 from flask import Flask
-from pytheus.metrics import Counter, Histogram
+from pytheus.metrics import Histogram
 from pytheus.exposition import generate_metrics
 
 from pytheus.backends import load_backend

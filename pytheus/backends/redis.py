@@ -6,7 +6,7 @@ from pytheus.backends.base import Backend, BackendConfig
 
 
 if TYPE_CHECKING:
-    from pytheus.metrics import _Metric, Histogram
+    from pytheus.metrics import _Metric
 
 
 EXPIRE_KEY_TIME = 3600  # 1 hour

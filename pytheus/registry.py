@@ -1,6 +1,6 @@
 from logging import getLogger
 from threading import Lock
-from typing import Iterable, Optional, Protocol
+from typing import Iterable, Protocol
 
 logger = getLogger(__name__)
 

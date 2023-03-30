@@ -64,9 +64,9 @@ class TestMetricCollector:
 
     def test_collect_with_labels(self):
         counter = Counter('name', 'desc', required_labels=['a', 'b'])
-        counter_a = counter.labels({'a': '1', 'b': '2'})
-        counter_b = counter.labels({'a': '7', 'b': '8'})
-        counter_c = counter.labels({'a': '6'})  # this should not be creating a sample
+        counter_a = counter.labels({'a': '1', 'b': '2'})  # noqa: F841
+        counter_b = counter.labels({'a': '7', 'b': '8'})  # noqa: F841
+        counter_c = counter.labels({'a': '6'})  # this should not be creating a sample # noqa: F841
         samples = counter._collector.collect()
         assert len(list(samples)) == 2
 
@@ -81,10 +81,10 @@ class TestMetricCollector:
     def test_collect_with_labels_and_default_labels(self):
         default_labels = {'a': 3}
         counter = Counter('name', 'desc', required_labels=['a', 'b'], default_labels=default_labels)
-        counter_a = counter.labels({'a': '1', 'b': '2'})
-        counter_b = counter.labels({'a': '7', 'b': '8'})
-        counter_c = counter.labels({'a': '6'})  # this should not be creating a sample
-        counter_d = counter.labels({'b': '5'})
+        counter_a = counter.labels({'a': '1', 'b': '2'})  # noqa: F841
+        counter_b = counter.labels({'a': '7', 'b': '8'})  # noqa: F841
+        counter_c = counter.labels({'a': '6'})  # this should not be creating a sample  # noqa: F841
+        counter_d = counter.labels({'b': '5'})  # noqa: F841
         samples = counter._collector.collect()
         samples = list(samples)
         assert len(samples) == 3
