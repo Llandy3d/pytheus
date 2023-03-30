@@ -66,16 +66,12 @@ class TestMetricCollector:
         counter = Counter("name", "desc", required_labels=["a", "b"])
         counter_a = counter.labels({"a": "1", "b": "2"})  # noqa: F841
         counter_b = counter.labels({"a": "7", "b": "8"})  # noqa: F841
-        counter_c = counter.labels(
-            {"a": "6"}
-        )  # this should not be creating a sample # noqa: F841
+        counter_c = counter.labels({"a": "6"})  # this should not be creating a sample # noqa: F841
         samples = counter._collector.collect()
         assert len(list(samples)) == 2
 
     def test_collect_with_default_labels(self):
-        counter = Counter(
-            "name", "desc", required_labels=["a"], default_labels={"a": 1}
-        )
+        counter = Counter("name", "desc", required_labels=["a"], default_labels={"a": 1})
         samples = counter._collector.collect()
         samples = list(samples)
         assert len(samples) == 1
@@ -84,14 +80,10 @@ class TestMetricCollector:
 
     def test_collect_with_labels_and_default_labels(self):
         default_labels = {"a": 3}
-        counter = Counter(
-            "name", "desc", required_labels=["a", "b"], default_labels=default_labels
-        )
+        counter = Counter("name", "desc", required_labels=["a", "b"], default_labels=default_labels)
         counter_a = counter.labels({"a": "1", "b": "2"})  # noqa: F841
         counter_b = counter.labels({"a": "7", "b": "8"})  # noqa: F841
-        counter_c = counter.labels(
-            {"a": "6"}
-        )  # this should not be creating a sample  # noqa: F841
+        counter_c = counter.labels({"a": "6"})  # this should not be creating a sample  # noqa: F841
         counter_d = counter.labels({"b": "5"})  # noqa: F841
         samples = counter._collector.collect()
         samples = list(samples)
@@ -167,22 +159,16 @@ class TestMetric:
         assert metric._check_can_observe() is True
 
     def test_check_can_observe_with_default_labels_partial_uncomplete(self):
-        metric = _Metric(
-            "name", "desc", required_labels=["bob", "cat"], default_labels={"bob": 1}
-        )
+        metric = _Metric("name", "desc", required_labels=["bob", "cat"], default_labels={"bob": 1})
         assert metric._check_can_observe() is False
 
     def test_check_can_observe_with_default_labels_partial_complete(self):
-        metric = _Metric(
-            "name", "desc", required_labels=["bob", "cat"], default_labels={"bob": 1}
-        )
+        metric = _Metric("name", "desc", required_labels=["bob", "cat"], default_labels={"bob": 1})
         metric = metric.labels({"cat": 2})
         assert metric._check_can_observe() is True
 
     def test_check_can_observe_with_default_labels_partial_overriden_label(self):
-        metric = _Metric(
-            "name", "desc", required_labels=["bob", "cat"], default_labels={"bob": 1}
-        )
+        metric = _Metric("name", "desc", required_labels=["bob", "cat"], default_labels={"bob": 1})
         metric = metric.labels({"cat": 2, "bob": 2})
         assert metric._check_can_observe() is True
 
@@ -224,9 +210,7 @@ class TestMetric:
 
     def test_metric_with_default_labels(self):
         default_labels = {"bob": "bobvalue"}
-        metric = _Metric(
-            "name", "desc", required_labels=["bob"], default_labels=default_labels
-        )
+        metric = _Metric("name", "desc", required_labels=["bob"], default_labels=default_labels)
         assert metric._collector._default_labels == default_labels
 
     def test_metric_with_default_labels_raises_without_required_labels(self):
@@ -237,9 +221,7 @@ class TestMetric:
     def test_metric_with_default_labels_with_label_not_in_required_labels(self):
         default_labels = {"bobby": "bobbyvalue"}
         with pytest.raises(LabelValidationException):
-            _Metric(
-                "name", "desc", required_labels=["bob"], default_labels=default_labels
-            )
+            _Metric("name", "desc", required_labels=["bob"], default_labels=default_labels)
 
     def test_metric_with_default_labels_with_subset_of_required_labels(self):
         default_labels = {"bob": "bobvalue"}
@@ -471,9 +453,7 @@ class TestHistogram:
 
     def test_buckets_empty_uses_default_buckets(self):
         histogram = Histogram("name", "desc", buckets=[])
-        assert histogram._upper_bounds == list(histogram.DEFAULT_BUCKETS) + [
-            float("inf")
-        ]
+        assert histogram._upper_bounds == list(histogram.DEFAULT_BUCKETS) + [float("inf")]
 
     def test_does_not_have_metric_value_backend(self, histogram):
         assert histogram._metric_value_backend is None

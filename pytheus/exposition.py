@@ -14,8 +14,7 @@ def generate_metrics(registry: Registry = REGISTRY) -> str:
     Returns the metrics from the registry in prometheus text format
     """
     lines = (
-        generate_from_collector(collector, registry.prefix)
-        for collector in registry.collect()
+        generate_from_collector(collector, registry.prefix) for collector in registry.collect()
     )
     output = LINE_SEPARATOR.join(lines)
     output += "\n"

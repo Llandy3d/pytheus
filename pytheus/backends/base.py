@@ -65,15 +65,11 @@ def _import_backend_class(full_import_path: str) -> type[Backend]:
     try:
         module = importlib.import_module(module_path)
     except ImportError as e:
-        raise InvalidBackendClassException(
-            f"Module '{module_path}' could not be imported: {e}"
-        )
+        raise InvalidBackendClassException(f"Module '{module_path}' could not be imported: {e}")
     try:
         cls = getattr(module, class_name)
         if not issubclass(cls, Backend):
-            raise InvalidBackendClassException(
-                f"Class '{class_name}' is not a Backend subclass"
-            )
+            raise InvalidBackendClassException(f"Class '{class_name}' is not a Backend subclass")
         return cls
     except AttributeError:
         raise InvalidBackendClassException(

@@ -70,9 +70,7 @@ class _MetricCollector:
         # TODO check maybe a proper MetricTypes should to be defined
         return str.lower(self._metric.__class__.__name__)
 
-    def _validate_required_labels(
-        self, labels: Sequence[str], is_histogram: bool = False
-    ) -> None:
+    def _validate_required_labels(self, labels: Sequence[str], is_histogram: bool = False) -> None:
         """
         Validates label names according to the regex.
         Labels starting with `__` are reserved for internal use by Prometheus.
@@ -81,9 +79,7 @@ class _MetricCollector:
             if label.startswith("__") or label_name_re.fullmatch(label) is None:
                 raise LabelValidationException(f"Invalid label name: {label}")
             if is_histogram and label == "le":
-                raise LabelValidationException(
-                    f"Invalid label name for Histogram: {label}"
-                )
+                raise LabelValidationException(f"Invalid label name for Histogram: {label}")
 
     def _validate_labels(self, labels: Labels) -> None:
         """
@@ -92,15 +88,12 @@ class _MetricCollector:
         `labels` will be also validated to be a subset of `required_labels`.
         """
         if not self._required_labels:
-            raise LabelValidationException(
-                "trying to use labels while required_labels is None"
-            )
+            raise LabelValidationException("trying to use labels while required_labels is None")
 
         labels_set = set(labels.keys())
         if not labels_set.issubset(self._required_labels):
             raise LabelValidationException(
-                "labels different than required_labels: "
-                f"{labels_set} != {self._required_labels}"
+                "labels different than required_labels: " f"{labels_set} != {self._required_labels}"
             )
 
     def collect(self) -> Iterable[Sample]:
@@ -110,14 +103,10 @@ class _MetricCollector:
         labeled_metrics: Iterable[Sample]
         if self._required_labels:
             labeled_metrics = (
-                sample
-                for metric in self._labeled_metrics.values()
-                for sample in metric.collect()
+                sample for metric in self._labeled_metrics.values() for sample in metric.collect()
             )
             if self._default_labels and self._metric._can_observe:
-                labeled_metrics = itertools.chain(
-                    labeled_metrics, self._metric.collect()
-                )
+                labeled_metrics = itertools.chain(labeled_metrics, self._metric.collect())
             return labeled_metrics
         else:
             return self._metric.collect()
@@ -140,9 +129,7 @@ class _Metric:
         self._collector = (
             collector
             if collector
-            else _MetricCollector(
-                name, description, self, required_labels, default_labels
-            )
+            else _MetricCollector(name, description, self, required_labels, default_labels)
         )
         self._can_observe = self._check_can_observe()
 

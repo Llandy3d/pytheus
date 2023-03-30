@@ -39,9 +39,7 @@ class CollectorRegistry:
     def register(self, collector: Collector) -> None:
         with self._lock:
             if collector.name in self._collectors:
-                logger.warning(
-                    f"collector with name '{collector.name}' already registred"
-                )
+                logger.warning(f"collector with name '{collector.name}' already registred")
                 return
             self._collectors[collector.name] = collector
 
