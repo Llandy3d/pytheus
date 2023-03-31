@@ -110,6 +110,11 @@ class TestMetric:
         assert metric._name == "name"
         assert metric._description == "desc"
 
+    def test_create_metric_without_registering_to_default_collector(self):
+        metric = _Metric("name", "desc", registry=None)
+        assert metric._registry is None
+        assert metric._collector._registry is None
+
     def test_create_metric_with_required_labels(self):
         required_labels = ["bob", "cat"]
         metric = _Metric("name", "desc", required_labels=required_labels)

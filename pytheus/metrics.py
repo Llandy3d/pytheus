@@ -32,7 +32,6 @@ class Sample:
 class _MetricCollector:
     """
     #TODO
-
     _labeled_metrics contains all observable metrics when required_labels is set.
     """
 
@@ -43,7 +42,7 @@ class _MetricCollector:
         metric: "_Metric",
         required_labels: Sequence[str] | None = None,
         default_labels: Labels | None = None,
-        registry: Registry = REGISTRY,
+        registry: Registry | None = REGISTRY,
     ) -> None:
         if metric_name_re.fullmatch(name) is None:
             raise ValueError(f"Invalid metric name: {name}")
@@ -63,7 +62,10 @@ class _MetricCollector:
         self._default_labels_count = len(default_labels) if default_labels else 0
         self._metric = metric
         self._labeled_metrics: dict[tuple[str, ...], _Metric] = {}
-        registry.register(self)
+        self._registry = registry
+
+        if registry:
+            registry.register(self)
 
     @property
     def type_(self) -> str:
@@ -120,16 +122,20 @@ class _Metric:
         required_labels: Sequence[str] | None = None,
         labels: Labels | None = None,
         default_labels: Labels | None = None,
+        registry: Registry | None = REGISTRY,
         collector: _MetricCollector | None = None,
     ) -> None:
         self._name = name
         self._description = description
         self._labels = labels
+        self._registry = registry
         self._metric_value_backend = None
         self._collector = (
             collector
             if collector
-            else _MetricCollector(name, description, self, required_labels, default_labels)
+            else _MetricCollector(
+                name, description, self, required_labels, default_labels, registry
+            )
         )
         self._can_observe = self._check_can_observe()
 
@@ -202,7 +208,11 @@ class _Metric:
         if labels_count != len(self._collector._required_labels):
             # does not add to collector
             return self.__class__(
-                self._name, self._description, collector=self._collector, labels=labels_
+                self._name,
+                self._description,
+                collector=self._collector,
+                labels=labels_,
+                registry=self._registry,
             )
 
         # add to collector
@@ -211,7 +221,11 @@ class _Metric:
             metric = self._collector._labeled_metrics[sorted_label_values]
         else:
             metric = self.__class__(
-                self._name, self._description, collector=self._collector, labels=labels_
+                self._name,
+                self._description,
+                collector=self._collector,
+                labels=labels_,
+                registry=self._registry,
             )
             self._collector._labeled_metrics[sorted_label_values] = metric
         return metric
@@ -385,6 +399,7 @@ class Histogram(_Metric):
         required_labels: Sequence[str] | None = None,
         labels: Labels | None = None,
         default_labels: Labels | None = None,
+        registry: Registry | None = REGISTRY,
         collector: _MetricCollector | None = None,
         buckets: Sequence[float] = DEFAULT_BUCKETS,
     ) -> None:
@@ -394,6 +409,7 @@ class Histogram(_Metric):
             required_labels,
             labels,
             default_labels,
+            registry,
             collector,
         )
 
