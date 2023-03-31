@@ -8,6 +8,16 @@ from pytheus.exceptions import (
     UnobservableMetricException,
 )
 from pytheus.metrics import Counter, Gauge, Histogram, _Metric, _MetricCollector
+from pytheus.registry import REGISTRY, CollectorRegistry
+
+
+@pytest.fixture
+def set_empty_registry():
+    """
+    As the REGISTRY object is global by default, we might have data from other tests.
+    So with this fixture we just set a new empty one.
+    """
+    REGISTRY.set_registry(CollectorRegistry())
 
 
 class TestMetricCollector:
@@ -110,10 +120,11 @@ class TestMetric:
         assert metric._name == "name"
         assert metric._description == "desc"
 
-    def test_create_metric_without_registering_to_default_collector(self):
+    def test_create_metric_without_registering_to_default_collector(self, set_empty_registry):
         metric = _Metric("name", "desc", registry=None)
         assert metric._registry is None
         assert metric._collector._registry is None
+        assert len(list(REGISTRY.collect())) == 0
 
     def test_create_metric_with_required_labels(self):
         required_labels = ["bob", "cat"]
