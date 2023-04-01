@@ -125,8 +125,8 @@ class _Metric:
         registry: Registry | None = REGISTRY,
         collector: _MetricCollector | None = None,
     ) -> None:
-        self._name = name
-        self._description = description
+        self.name = name
+        self.description = description
         self._labels = labels
         self._registry = registry
         self._metric_value_backend = None
@@ -208,8 +208,8 @@ class _Metric:
         if labels_count != len(self._collector._required_labels):
             # does not add to collector
             return self.__class__(
-                self._name,
-                self._description,
+                self.name,
+                self.description,
                 collector=self._collector,
                 labels=labels_,
                 registry=self._registry,
@@ -221,8 +221,8 @@ class _Metric:
             metric = self._collector._labeled_metrics[sorted_label_values]
         else:
             metric = self.__class__(
-                self._name,
-                self._description,
+                self.name,
+                self.description,
                 collector=self._collector,
                 labels=labels_,
                 registry=self._registry,

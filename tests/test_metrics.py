@@ -117,8 +117,8 @@ class TestMetricCollector:
 class TestMetric:
     def test_create_metric(self):
         metric = _Metric("name", "desc")
-        assert metric._name == "name"
-        assert metric._description == "desc"
+        assert metric.name == "name"
+        assert metric.description == "desc"
 
     def test_create_metric_without_registering_to_default_collector(self, set_empty_registry):
         metric = _Metric("name", "desc", registry=None)
