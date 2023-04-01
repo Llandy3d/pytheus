@@ -17,7 +17,7 @@ class TestCollectorRegistry:
         registry.register(metric)
 
         assert metric.name in registry._collectors
-        assert registry._collectors[metric.name] is metric
+        assert registry._collectors[metric.name] is metric._collector
 
     def test_register_metric_duplicate_name_is_ignored(self):
         registry = CollectorRegistry()
@@ -27,7 +27,7 @@ class TestCollectorRegistry:
         registry.register(metric_second)
 
         assert metric_first is not metric_second
-        assert registry._collectors[metric_first.name] is metric_first
+        assert registry._collectors[metric_first.name] is metric_first._collector
 
     def test_unregister_metric(self):
         registry = CollectorRegistry()
@@ -58,3 +58,26 @@ class TestCollectorRegistry:
         collectors = list(collectors)
 
         assert len(collectors) == 2
+
+    def test_collect_with_labeled_metrics(self):
+        registry = CollectorRegistry()
+        counter = Counter("name", "desc", required_labels=["bob", "cat"], registry=None)
+        counter.labels({"bob": "2", "cat": "3"})
+        registry.register(counter)
+
+        collectors = registry.collect()
+        collectors = list(collectors)
+
+        assert len(collectors) == 1
+        assert len(list(collectors[0].collect())) == 1
+
+    def test_collect_with_labeled_metrics_unobservable(self):
+        registry = CollectorRegistry()
+        counter = Counter("name", "desc", required_labels=["bob", "cat"], registry=None)
+        registry.register(counter)
+
+        collectors = registry.collect()
+        collectors = list(collectors)
+
+        assert len(collectors) == 1
+        assert len(list(collectors[0].collect())) == 0

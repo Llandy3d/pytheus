@@ -41,6 +41,11 @@ class CollectorRegistry:
             if collector.name in self._collectors:
                 logger.warning(f"collector with name '{collector.name}' already registered")
                 return
+            # NOTE: in case the user is adding directly a metric to the registry
+            # we need to add the _MetricCollector to the registry. There might be a better way
+            # to d this but it should work for now.
+            if hasattr(collector, "_collector"):
+                collector = collector._collector
             self._collectors[collector.name] = collector
 
     def unregister(self, collector: Collector) -> None:
