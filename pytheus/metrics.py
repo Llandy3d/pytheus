@@ -14,6 +14,7 @@ from pytheus.exceptions import (
     UnobservableMetricException,
 )
 from pytheus.registry import REGISTRY, Registry
+from pytheus.utils import MetricType
 
 Labels = dict[str, str]
 
@@ -58,6 +59,7 @@ class _MetricCollector:
 
         self.name = name
         self.description = description
+        self.type_ = metric.type_
         self._default_labels = default_labels
         self._default_labels_count = len(default_labels) if default_labels else 0
         self._metric = metric
@@ -66,11 +68,6 @@ class _MetricCollector:
 
         if registry:
             registry.register(self)
-
-    @property
-    def type_(self) -> str:
-        # TODO check maybe a proper MetricTypes should to be defined
-        return str.lower(self._metric.__class__.__name__)
 
     def _validate_required_labels(self, labels: Sequence[str], is_histogram: bool = False) -> None:
         """
@@ -115,6 +112,8 @@ class _MetricCollector:
 
 
 class _Metric:
+    type_: MetricType = MetricType.UNTYPED
+
     def __init__(
         self,
         name: str,
@@ -254,6 +253,8 @@ class _Metric:
 
 
 class Counter(_Metric):
+    type_: MetricType = MetricType.COUNTER
+
     def inc(self, value: float = 1.0) -> None:
         """
         Increments the value by the given amount.
@@ -312,6 +313,8 @@ class Counter(_Metric):
 
 
 class Gauge(_Metric):
+    type_: MetricType = MetricType.GAUGE
+
     def inc(self, value: float = 1.0) -> None:
         """
         Increments the value by the given amount.
@@ -387,6 +390,7 @@ class Gauge(_Metric):
 
 
 class Histogram(_Metric):
+    type_: MetricType = MetricType.HISTOGRAM
     # Default buckets are tailored to broadly measure the response time (in seconds) of a network
     # service. Most likely you will be required to define buckets customized to your use case.
     # Valus taken from the golang/rust client.

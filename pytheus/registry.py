@@ -2,18 +2,17 @@ from logging import getLogger
 from threading import Lock
 from typing import Iterable, Protocol
 
+from pytheus.utils import MetricType
+
 logger = getLogger(__name__)
 
 
 class Collector(Protocol):
     name: str
     description: str
+    type_: MetricType
 
     def collect(self) -> Iterable:
-        ...
-
-    @property
-    def type_(self) -> str:
         ...
 
 
