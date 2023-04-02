@@ -9,6 +9,7 @@ from pytheus.exceptions import (
 )
 from pytheus.metrics import Counter, Gauge, Histogram, _Metric, _MetricCollector
 from pytheus.registry import REGISTRY, CollectorRegistry
+from pytheus.utils import MetricType
 
 
 @pytest.fixture
@@ -119,6 +120,7 @@ class TestMetric:
         metric = _Metric("name", "desc")
         assert metric.name == "name"
         assert metric.description == "desc"
+        assert metric.type_ == MetricType.UNTYPED
 
     def test_create_metric_without_registering_to_default_collector(self, set_empty_registry):
         metric = _Metric("name", "desc", registry=None)
@@ -288,6 +290,9 @@ class TestCounter:
     def counter(self):
         return Counter("name", "desc")
 
+    def test_metric_type(self, counter):
+        assert counter.type_ == MetricType.COUNTER
+
     def test_can_increment(self, counter):
         counter.inc()
         assert counter._metric_value_backend.get() == 1
@@ -373,6 +378,9 @@ class TestGauge:
     def gauge(self):
         return Gauge("name", "desc")
 
+    def test_metric_type(self, gauge):
+        assert gauge.type_ == MetricType.GAUGE
+
     def test_gauge_starts_at_zero(self, gauge):
         assert gauge._metric_value_backend.get() == 0
 
@@ -445,6 +453,9 @@ class TestHistogram:
     @pytest.fixture
     def histogram(self):
         return Histogram("name", "desc")
+
+    def test_metric_type(self, histogram):
+        assert histogram.type_ == MetricType.HISTOGRAM
 
     def test_create_histogram_with_default_labels(self):
         Histogram("name", "desc", required_labels=["bob", "cat"])
