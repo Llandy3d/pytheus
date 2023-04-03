@@ -50,7 +50,7 @@ class CollectorRegistry:
                     if _collector.name in self._collectors:
                         logger.warning(
                             f"CustomCollector: {collector.name} - collector with name"
-                            " '{_collector.name}' already registered. Ignoring the custom collector"
+                            f" '{_collector.name}' already registered. Ignoring custom collector"
                         )
                         return
 
