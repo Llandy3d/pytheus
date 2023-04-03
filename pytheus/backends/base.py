@@ -1,9 +1,8 @@
 import importlib
 import json
 import os
-from abc import ABC, abstractmethod
 from threading import Lock
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from pytheus.exceptions import InvalidBackendClassException, InvalidBackendConfigException
 
@@ -14,41 +13,33 @@ if TYPE_CHECKING:
 BackendConfig = dict[str, Any]
 
 
-class Backend(ABC):
+@runtime_checkable
+class Backend(Protocol):
+    """
+    Describes how to implement a Backend that can be used as a metric value backend.
+    It must take the values indicated in the `__init__` method.
+    """
+
     def __init__(
+        # optional config ?
         self,
         config: BackendConfig,
         metric: "_Metric",
         histogram_bucket: str | None = None,
     ) -> None:
-        self.metric = metric
-        if self.is_valid_config(config):
-            self.config = config
-        else:
-            raise InvalidBackendConfigException(
-                f"Configuration object '{config}' is not valid for the backend class "
-                f"'{self.__class__}'"
-            )
+        ...
 
-    @abstractmethod
-    def is_valid_config(self, config: BackendConfig) -> bool:
-        return True
-
-    @abstractmethod
     def inc(self, value: float) -> None:
-        return None
+        ...
 
-    @abstractmethod
     def dec(self, value: float) -> None:
-        return None
+        ...
 
-    @abstractmethod
     def set(self, value: float) -> None:
-        return None
+        ...
 
-    @abstractmethod
     def get(self) -> float:
-        return 0.0
+        ...
 
 
 def _import_backend_class(full_import_path: str) -> type[Backend]:
@@ -64,7 +55,7 @@ def _import_backend_class(full_import_path: str) -> type[Backend]:
     except ImportError as e:
         raise InvalidBackendClassException(f"Module '{module_path}' could not be imported: {e}")
     try:
-        cls = getattr(module, class_name)
+        cls: type[Backend] = getattr(module, class_name)
         if not issubclass(cls, Backend):
             raise InvalidBackendClassException(f"Class '{class_name}' is not a Backend subclass")
         return cls
@@ -108,7 +99,7 @@ def get_backend(metric: "_Metric", histogram_bucket: str | None = None) -> Backe
     return BACKEND_CLASS(BACKEND_CONFIG, metric, histogram_bucket=histogram_bucket)
 
 
-class SingleProcessBackend(Backend):
+class SingleProcessBackend:
     """Provides a single-process backend that uses a thread-safe, in-memory approach."""
 
     def __init__(
@@ -117,12 +108,8 @@ class SingleProcessBackend(Backend):
         metric: "_Metric",
         histogram_bucket: str | None = None,
     ) -> None:
-        super().__init__(config, metric)
         self._value = 0.0
         self._lock = Lock()
-
-    def is_valid_config(self, config: BackendConfig) -> bool:
-        return True
 
     def inc(self, value: float) -> None:
         with self._lock:
@@ -139,19 +126,6 @@ class SingleProcessBackend(Backend):
     def get(self) -> float:
         with self._lock:
             return self._value
-
-
-class MultipleProcessFileBackend(Backend):
-    """Provides a multi-process backend that uses MMAP files."""
-
-    def is_valid_config(self, config: BackendConfig) -> bool:
-        raise NotImplementedError  # TODO
-
-    def inc(self, value: float) -> None:
-        raise NotImplementedError  # TODO
-
-    def get(self) -> float:
-        raise NotImplementedError  # TODO
 
 
 BACKEND_CLASS: type[Backend]
