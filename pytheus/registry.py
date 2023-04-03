@@ -38,8 +38,22 @@ class CollectorRegistry:
     def register(self, collector: Collector) -> None:
         with self._lock:
             if collector.name in self._collectors:
-                logger.warning(f"collector with name '{collector.name}' already registered")
+                logger.warning(
+                    f"collector with name '{collector.name}' already registered."
+                    " Keeping previous entry"
+                )
                 return
+            # if it has not this field it's a custom collector, I do not like this approach but
+            # let's get it working
+            if not hasattr(collector, "type_"):
+                for _collector in collector.collect():
+                    if _collector.name in self._collectors:
+                        logger.warning(
+                            f"CustomCollector: {collector.name} - collector with name"
+                            " '{_collector.name}' already registered. Ignoring the custom collector"
+                        )
+                        return
+
             # NOTE: in case the user is adding directly a metric to the registry
             # we need to add the _MetricCollector to the registry. There might be a better way
             # to d this but it should work for now.

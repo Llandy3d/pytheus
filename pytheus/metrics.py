@@ -13,7 +13,7 @@ from pytheus.exceptions import (
     LabelValidationException,
     UnobservableMetricException,
 )
-from pytheus.registry import REGISTRY, Registry
+from pytheus.registry import REGISTRY, Collector, Registry
 from pytheus.utils import MetricType
 
 Labels = dict[str, str]
@@ -28,6 +28,25 @@ class Sample:
     suffix: str
     labels: dict[str, str] | None
     value: float
+
+
+class CustomCollector(Collector):
+    """
+    Inheriting from this protocol is the current way to create a custom collector.
+    The property `name` will return the lowercased class name so that it can be
+    tracked in a registry.
+    Not particularly liking this solution but for now it should suffice due to
+    the current structure.
+    """
+
+    @property
+    def name(self) -> str:
+        return str.lower(self.__class__.__name__)
+
+    # overriding the Collector protocol it requires to be writeable so we have this dummy setter
+    @name.setter
+    def name(self, value: str) -> None:
+        pass
 
 
 class _MetricCollector:
@@ -268,7 +287,6 @@ class Counter(_Metric):
         assert self._metric_value_backend is not None
         self._metric_value_backend.inc(value)
 
-    # TODO: consider adding decorator support
     @contextmanager
     def count_exceptions(
         self, exceptions: type[Exception] | tuple[Exception] | None = None

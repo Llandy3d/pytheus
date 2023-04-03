@@ -7,7 +7,7 @@ from pytheus.exceptions import (
     LabelValidationException,
     UnobservableMetricException,
 )
-from pytheus.metrics import Counter, Gauge, Histogram, _Metric, _MetricCollector
+from pytheus.metrics import Counter, CustomCollector, Gauge, Histogram, _Metric, _MetricCollector
 from pytheus.registry import REGISTRY, CollectorRegistry
 from pytheus.utils import MetricType
 
@@ -552,3 +552,60 @@ class TestHistogram:
         test_2()
         assert histogram._count.get() == 2
         assert histogram._count.get() != 0
+
+
+class _TestCollector(CustomCollector):
+    def collect(self):
+        counter = Counter("name", "desc", registry=None)
+        counter.inc()
+        yield counter
+
+
+class TestCustomCollector:
+    def test_create_custom_collector(self):
+        registry = CollectorRegistry()
+        registry.register(_TestCollector())
+
+        assert "_testcollector" in registry._collectors
+
+    def test_custom_collector_collect(self):
+        custom_collector = _TestCollector()
+        metrics = list(custom_collector.collect())
+
+        assert len(metrics) == 1
+        assert metrics[0]._metric_value_backend._value == 1.0
+
+    def test_cannot_add_two_custom_collectors_with_same_name(self, set_empty_registry):
+        first_collector = _TestCollector()
+        second_collector = _TestCollector()
+        registry = CollectorRegistry()
+        registry.register(first_collector)
+        registry.register(second_collector)
+
+        assert first_collector is not second_collector
+        assert registry._collectors["_testcollector"] is first_collector
+
+    def test_registry_correctly_return_custom_collector(self):
+        custom_collector = _TestCollector()
+        registry = CollectorRegistry()
+        registry.register(custom_collector)
+
+        collectors = registry.collect()
+        assert list(collectors)[0] is custom_collector
+
+    def test_can_remove_from_registry(self):
+        custom_collector = _TestCollector()
+        registry = CollectorRegistry()
+        registry.register(custom_collector)
+        registry.unregister(custom_collector)
+
+        collectors = registry.collect()
+        assert len(list(collectors)) == 0
+
+    def test_adding_to_registry_with_already_present_metric_with_same_name(self):
+        registry = CollectorRegistry()
+        counter = Counter("name", "desc", registry=registry)
+        registry.register(_TestCollector())
+
+        assert len(registry._collectors) == 1
+        assert registry._collectors["name"] is counter._collector
