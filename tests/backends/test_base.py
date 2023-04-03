@@ -1,8 +1,15 @@
 import os
 from unittest import mock
 
+import pytest
+
 from pytheus.backends import base
-from pytheus.backends.base import SingleProcessBackend, load_backend
+from pytheus.backends.base import (
+    InvalidBackendClassException,
+    SingleProcessBackend,
+    _import_backend_class,
+    load_backend,
+)
 
 
 class DummyProcessBackend:
@@ -61,3 +68,25 @@ class TestLoadBackend:
     def test_initialization_hook(self, _initialize_mock):
         load_backend(DummyProcessBackend)
         _initialize_mock.assert_called()
+
+
+class TestImportBackendClass:
+    def test_with_correct_class_path(self):
+        imported_class = _import_backend_class("pytheus.backends.base.SingleProcessBackend")
+        assert imported_class is SingleProcessBackend
+
+    def test_without_path_raises(self):
+        with pytest.raises(InvalidBackendClassException):
+            _import_backend_class("notaclasspath")
+
+    def test_wrong_module_raises(self):
+        with pytest.raises(InvalidBackendClassException):
+            _import_backend_class("pytheus.doesntexists.Class")
+
+    def test_class_not_in_module_raises(self):
+        with pytest.raises(InvalidBackendClassException):
+            _import_backend_class("pytheus.metrics.UnexistingProcessor")
+
+    def test_class_not_a_backend_subclass_raises(self):
+        with pytest.raises(InvalidBackendClassException):
+            _import_backend_class("pytheus.metrics._MetricCollector")
