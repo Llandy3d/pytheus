@@ -93,6 +93,9 @@ def load_backend(
     else:
         BACKEND_CONFIG = {}  # Default
 
+    if hasattr(BACKEND_CLASS, "_initialize"):
+        BACKEND_CLASS._initialize(BACKEND_CONFIG)
+
 
 def get_backend(metric: "_Metric", histogram_bucket: str | None = None) -> Backend:
     # Probably ok not to cache this and allow each metric to keep its own

@@ -47,11 +47,13 @@ class MultipleProcessRedisBackend:
         elif metric._labels:
             self._labels_hash = "-".join(sorted(metric._labels.values()))
 
-        if self.CONNECTION_POOL is None:
-            MultipleProcessRedisBackend.CONNECTION_POOL = redis.Redis(
-                **config,
-                decode_responses=True,
-            )
+    @classmethod
+    def _initialize(cls, config: "BackendConfig") -> None:
+        cls.CONNECTION_POOL = redis.Redis(
+            **config,
+            decode_responses=True,
+        )
+        cls.CONNECTION_POOL.ping()
 
     def inc(self, value: float) -> None:
         assert self.CONNECTION_POOL is not None

@@ -354,3 +354,22 @@ print(counter._metric_value_backend.__class__)
 print(counter._metric_value_backend.config)
 # {'host': '127.0.0.1', 'port': 6379}
 ```
+
+## Create your own Backend
+
+### WIP
+
+### Custom Backend
+
+You can create your own backend by implementing a class that fulfills the `Backend` protocol.
+
+### Initialization hook
+
+It's possible that you want to initialize your custom backed or there are one time steps that you want to happen on import.
+To achieve that you can use the class method hook called `_initialize` that accepts a `BackendConfig` parameter.
+
+```python
+@classmethod
+def _initialize(cls, config: "BackendConfig") -> None:
+    # initialization steps
+```
