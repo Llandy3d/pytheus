@@ -93,6 +93,7 @@ def load_backend(
     else:
         BACKEND_CONFIG = {}  # Default
 
+    # initialization hook
     if hasattr(BACKEND_CLASS, "_initialize"):
         BACKEND_CLASS._initialize(BACKEND_CONFIG)
 
