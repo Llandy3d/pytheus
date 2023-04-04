@@ -357,8 +357,6 @@ print(counter._metric_value_backend.config)
 
 ## Create your own Backend
 
-### WIP
-
 ### Custom Backend
 
 You can create your own backend by implementing a class that fulfills the `Backend` protocol.
