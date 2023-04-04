@@ -364,7 +364,6 @@ You can create your own backend by implementing a class that fulfills the `Backe
 ```python
 class Backend(Protocol):
     def __init__(
-        # optional config ?
         self,
         config: BackendConfig,
         metric: "_Metric",

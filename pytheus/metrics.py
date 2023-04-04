@@ -411,7 +411,7 @@ class Histogram(_Metric):
     type_: MetricType = MetricType.HISTOGRAM
     # Default buckets are tailored to broadly measure the response time (in seconds) of a network
     # service. Most likely you will be required to define buckets customized to your use case.
-    # Valus taken from the golang/rust client.
+    # Values taken from the golang/rust client.
     DEFAULT_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10)
 
     def __init__(
