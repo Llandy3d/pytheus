@@ -296,7 +296,7 @@ print(counter._metric_value_backend.config)
 You can define environment configuration to have different defaults, using two environment variables:
 
 ```bash
-export PYTHEUS_BACKEND_CLASS="pytheus.backends.MultipleProcessFileBackend"
+export PYTHEUS_BACKEND_CLASS="pytheus.backends.MultiProcessFileBackend"
 export PYTHEUS_BACKEND_CONFIG="./config.json"
 ```
 
@@ -319,7 +319,7 @@ counter = Counter(
     required_labels=["label_a", "label_b"],
 )
 print(counter._metric_value_backend.__class__)
-# <class 'pytheus.backends.MultipleProcessFileBackend'>
+# <class 'pytheus.backends.MultiProcessFileBackend'>
 print(counter._metric_value_backend.config)
 # {'pytheus_file_directory': "./"}
 ```
@@ -330,10 +330,10 @@ setup we have just described:
 ```python
 
 from pytheus.metrics import Counter
-from pytheus.backends import MultipleProcessRedisBackend, load_backend
+from pytheus.backends import MultiProcessRedisBackend, load_backend
 
 load_backend(
-    backend_class=MultipleProcessRedisBackend,
+    backend_class=MultiProcessRedisBackend,
     backend_config={
       "host": "127.0.0.1",
       "port":  6379
@@ -350,7 +350,7 @@ counter = Counter(
     required_labels=["label_a", "label_b"],
 )
 print(counter._metric_value_backend.__class__)
-# <class 'pytheus.backends.MultipleProcessRedisBackend'>
+# <class 'pytheus.backends.MultiProcessRedisBackend'>
 print(counter._metric_value_backend.config)
 # {'host': '127.0.0.1', 'port': 6379}
 ```

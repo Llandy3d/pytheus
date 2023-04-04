@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 EXPIRE_KEY_TIME = 3600  # 1 hour
 
 
-class MultipleProcessRedisBackend:
+class MultiProcessRedisBackend:
     """
     Provides a multi-process backend that uses Redis.
     Single dimension metrics will be stored as list (ex. Counter) while labelled
