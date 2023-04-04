@@ -363,9 +363,34 @@ print(counter._metric_value_backend.config)
 
 You can create your own backend by implementing a class that fulfills the `Backend` protocol.
 
+```python
+class Backend(Protocol):
+    def __init__(
+        # optional config ?
+        self,
+        config: BackendConfig,
+        metric: "_Metric",
+        histogram_bucket: str | None = None,
+    ) -> None:
+        ...
+
+    def inc(self, value: float) -> None:
+        ...
+
+    def dec(self, value: float) -> None:
+        ...
+
+    def set(self, value: float) -> None:
+        ...
+
+    def get(self) -> float:
+        ...
+```
+
 ### Initialization hook
 
 It's possible that you want to initialize your custom backed or there are one time steps that you want to happen on import.
+
 To achieve that you can use the class method hook called `_initialize` that accepts a `BackendConfig` parameter.
 
 ```python
