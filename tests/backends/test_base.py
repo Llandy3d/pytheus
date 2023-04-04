@@ -8,8 +8,10 @@ from pytheus.backends.base import (
     InvalidBackendClassException,
     SingleProcessBackend,
     _import_backend_class,
+    get_backend,
     load_backend,
 )
+from pytheus.metrics import _Metric
 
 
 class DummyProcessBackend:
@@ -90,3 +92,11 @@ class TestImportBackendClass:
     def test_class_not_a_backend_subclass_raises(self):
         with pytest.raises(InvalidBackendClassException):
             _import_backend_class("pytheus.metrics._MetricCollector")
+
+
+def test_get_backend():
+    load_backend()
+    metric = _Metric("name", "desc", registry=None)
+    backend_class = get_backend(metric)
+
+    assert isinstance(backend_class, SingleProcessBackend)
