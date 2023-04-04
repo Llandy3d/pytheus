@@ -1,0 +1,8 @@
+site_name: pytheus
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+
+repo_url: https://github.com/Llandy3d/pytheus
