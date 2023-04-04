@@ -100,3 +100,30 @@ def test_get_backend():
     backend_class = get_backend(metric)
 
     assert isinstance(backend_class, SingleProcessBackend)
+
+
+class TestSingleProcessBackend:
+    @pytest.fixture
+    def single_process_backend(self):
+        metric = _Metric("name", "desc", registry=None)
+        return SingleProcessBackend({}, metric)
+
+    def test_creation(self, single_process_backend):
+        assert single_process_backend._value == 0.0
+        assert single_process_backend._lock
+
+    def test_inc(self, single_process_backend):
+        single_process_backend.inc(1)
+        assert single_process_backend._value == 1.0
+
+    def test_dec(self, single_process_backend):
+        single_process_backend.dec(1)
+        assert single_process_backend._value == -1.0
+
+    def test_set(self, single_process_backend):
+        single_process_backend.set(2)
+        assert single_process_backend._value == 2.0
+
+    def test_get(self, single_process_backend):
+        single_process_backend.inc(1)
+        assert single_process_backend.get() == 1.0
