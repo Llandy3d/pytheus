@@ -2,16 +2,15 @@ from typing import TYPE_CHECKING
 
 import redis
 
-from pytheus.backends.base import Backend, BackendConfig
-
 if TYPE_CHECKING:
+    from pytheus.backends.base import BackendConfig
     from pytheus.metrics import _Metric
 
 
 EXPIRE_KEY_TIME = 3600  # 1 hour
 
 
-class MultipleProcessRedisBackend(Backend):
+class MultiProcessRedisBackend:
     """
     Provides a multi-process backend that uses Redis.
     Single dimension metrics will be stored as list (ex. Counter) while labelled
@@ -24,12 +23,11 @@ class MultipleProcessRedisBackend(Backend):
 
     def __init__(
         self,
-        config: BackendConfig,
+        config: "BackendConfig",
         metric: "_Metric",
         histogram_bucket: str | None = None,
     ) -> None:
-        super().__init__(config, metric)
-        self._key_name = self.metric._collector.name
+        self._key_name = metric._collector.name
         self._labels_hash = None
         self._histogram_bucket = histogram_bucket
 
@@ -39,24 +37,23 @@ class MultipleProcessRedisBackend(Backend):
 
         # default labels
         joint_labels = None
-        if self.metric._collector._default_labels_count:
-            joint_labels = self.metric._collector._default_labels.copy()  # type: ignore
-            if self.metric._labels:
-                joint_labels.update(self.metric._labels)
+        if metric._collector._default_labels_count:
+            joint_labels = metric._collector._default_labels.copy()  # type: ignore
+            if metric._labels:
+                joint_labels.update(metric._labels)
 
         if joint_labels:
             self._labels_hash = "-".join(sorted(joint_labels.values()))
-        elif self.metric._labels:
-            self._labels_hash = "-".join(sorted(self.metric._labels.values()))
+        elif metric._labels:
+            self._labels_hash = "-".join(sorted(metric._labels.values()))
 
-        if self.CONNECTION_POOL is None:
-            MultipleProcessRedisBackend.CONNECTION_POOL = redis.Redis(
-                **config,
-                decode_responses=True,
-            )
-
-    def is_valid_config(self, config: BackendConfig) -> bool:
-        return True  # TODO
+    @classmethod
+    def _initialize(cls, config: "BackendConfig") -> None:
+        cls.CONNECTION_POOL = redis.Redis(
+            **config,
+            decode_responses=True,
+        )
+        cls.CONNECTION_POOL.ping()
 
     def inc(self, value: float) -> None:
         assert self.CONNECTION_POOL is not None

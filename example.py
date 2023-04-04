@@ -3,12 +3,12 @@ import time
 from flask import Flask
 
 from pytheus.backends import load_backend
-from pytheus.backends.redis import MultipleProcessRedisBackend
+from pytheus.backends.redis import MultiProcessRedisBackend
 from pytheus.exposition import generate_metrics
 from pytheus.metrics import Histogram
 
 load_backend(
-    backend_class=MultipleProcessRedisBackend,
+    backend_class=MultiProcessRedisBackend,
     backend_config={"host": "127.0.0.1", "port": 6379},
 )
 
