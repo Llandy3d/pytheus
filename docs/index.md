@@ -1,17 +1,10 @@
-# Welcome to MkDocs
+<p align="center">
+  <img width="360px" src="/img/pytheus-logo.png" alt='pytheus'>
+</p>
+<p align="center">
+    <em>playing with metrics</em>
+</p>
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+# Introduction
 
-## Commands
-
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
-
-## Project layout
-
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+pytheus is blah blah blah!
