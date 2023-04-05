@@ -20,6 +20,7 @@ Some of the features are:
   - registry prefix support ✅
 
 ---
+
 ## Philosophy
 
 Simply put is to let you work with metrics the way you want.
@@ -31,7 +32,24 @@ Be extremely flexible, allow for customization from the user for anything they m
 - High flexibility with an high degree of `labels` control and customization.
 
 ---
+
 ## Requirements
 
 - Python 3.10+
 - redis >= 4.0.0 (**optional**: for multiprocessing)
+
+---
+
+## Installation
+
+```
+pip install pytheus
+```
+
+Optionally if you want to use the Redis backend (for multiprocess support) you will need the redis library:
+```
+pip install redis
+
+# or everything in one command
+pip install pytheus[redis]
+```
