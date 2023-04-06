@@ -58,3 +58,7 @@ Sometimes you might want to register a metric directly (for example when creatin
 ```python
 REGISTRY.register(mycollector)
 ```
+
+!!! note
+
+    `REGISTRY` is not really the registry object in this library, but a proxy used to interact with one.
