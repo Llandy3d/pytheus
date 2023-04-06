@@ -26,6 +26,7 @@ theme:
         icon: material/toggle-switch-off-outline
         name: Switch to light mode
 
+repo_name: Llandy3d/pytheus
 repo_url: https://github.com/Llandy3d/pytheus
 
 nav:
