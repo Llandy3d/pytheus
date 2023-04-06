@@ -60,9 +60,9 @@ pip install pytheus[redis]
 
 ```python title="example.py"
 import time
-from flask import Flask
+from flask import Flask, Response
 from pytheus.metrics import Histogram
-from pytheus.exposition import generate_metrics
+from pytheus.exposition import generate_metrics, PROMETHEUS_CONTENT_TYPE
 
 app = Flask(__name__)
 
@@ -70,10 +70,10 @@ page_visit_latency_seconds = Histogram(
     'page_visit_latency_seconds', 'documenting the metric..'
 )
 
-# this is the endpoint that prometheus will use to scrape the metrics
 @app.route('/metrics')
 def metrics():
-    return generate_metrics()
+    data = generate_metrics()
+    return Response(data, headers={'Content-Type': PROMETHEUS_CONTENT_TYPE})
 
 # track time with the context manager
 @app.route('/')
