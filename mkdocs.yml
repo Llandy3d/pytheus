@@ -27,6 +27,9 @@ theme:
 
 repo_url: https://github.com/Llandy3d/pytheus
 
+nav:
+  - Introduction: 'index.md'
+
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
