@@ -5,6 +5,7 @@ theme:
 
   features:
     - content.code.copy
+    - navigation.sections
 
   icon:
     repo: fontawesome/brands/github
@@ -29,6 +30,8 @@ repo_url: https://github.com/Llandy3d/pytheus
 
 nav:
   - Introduction: 'index.md'
+  - Usage:
+    - Quickstart: quickstart.md
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -38,3 +41,4 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - admonition
