@@ -3,6 +3,9 @@ site_name: pytheus
 theme:
   name: material
 
+  features:
+    - content.code.copy
+
   icon:
     repo: fontawesome/brands/github
 

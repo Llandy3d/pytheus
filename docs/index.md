@@ -53,3 +53,44 @@ pip install redis
 # or everything in one command
 pip install pytheus[redis]
 ```
+
+---
+
+## Example
+
+```python title="example.py"
+import time
+from flask import Flask
+from pytheus.metrics import Histogram
+from pytheus.exposition import generate_metrics
+
+app = Flask(__name__)
+
+page_visit_latency_seconds = Histogram(
+    'page_visit_latency_seconds', 'documenting the metric..'
+)
+
+# this is the endpoint that prometheus will use to scrape the metrics
+@app.route('/metrics')
+def metrics():
+    return generate_metrics()
+
+# track time with the context manager
+@app.route('/')
+def home():
+    with page_visit_latency_seconds.time():
+        return 'hello world!'
+
+# alternatively you can also track time with the decorator shortcut
+@app.route('/slow')
+@page_visit_latency_seconds
+def slow():
+    time.sleep(3)
+    return 'hello world! from slow!'
+
+app.run(host='0.0.0.0', port=8080)
+```
+
+Run the app with `python example.py` and visit either `localhost:8080` or `localhost:8080/slow` and finally you will be able to see your metrics on `localhost:8080/metrics`!
+
+You can also point prometheus to scrape this endpoint and see directly the metrics in there.
