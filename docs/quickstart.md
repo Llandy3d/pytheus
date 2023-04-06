@@ -62,3 +62,23 @@ REGISTRY.register(mycollector)
 !!! note
 
     `REGISTRY` is not really the registry object in this library, but a proxy used to interact with one.
+
+## Exposition
+
+To expose the metrics for prometheus to scrape use your favourite library!
+
+The library offers the `generate_metrics` function that will ask the global registry to collect all the metrics and return them to you in a text based format. From there is just a matter of exposing an endpoint (usually `/metrics`) where you return that data.
+
+```python
+from pytheus.exposition import generate_metrics
+
+metrics_data = generate_metrics()
+```
+
+It's good practice to set the `Content-Type` header so it's offered as a constant:
+
+```python
+from pytheus.exposition import PROMETHEUS_CONTENT_TYPE
+
+headers = {'Content-Type': PROMETHEUS_CONTENT_TYPE}
+```
