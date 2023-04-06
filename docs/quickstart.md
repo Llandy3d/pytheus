@@ -41,3 +41,20 @@ page_hit_total.inc()
 # or specify the amount
 page_hit_total.inc(2)
 ```
+
+## Registry
+
+The registry it's an object that contains the metrics you created. By default when you create a metric from the appropriate class it will be automatically registered in the global `REGISTRY` object.
+
+This global object is used to generate the text that prometheus can scrape and will handle logic checks to confirm that you are not duplicating metrics name for example.
+You can access the global registry object by importing it:
+
+```python
+from pytheus.registry import REGISTRY
+```
+
+Sometimes you might want to register a metric directly (for example when creating a custom collector) and you can do it like this:
+
+```python
+REGISTRY.register(mycollector)
+```
