@@ -82,3 +82,58 @@ from pytheus.exposition import PROMETHEUS_CONTENT_TYPE
 
 headers = {'Content-Type': PROMETHEUS_CONTENT_TYPE}
 ```
+
+## Project
+
+Now let's start with the quickstart project!
+
+### Setup
+
+First setup your environment.
+
+```bash
+# create the project directory
+mkdir quickstart
+cd quickstart
+
+# create a python virtual environment and activate it
+python3 -m venv venv
+. venv/bin/activate
+
+# install the required libraries for the quickstart
+pip install pytheus
+pip install flask
+```
+
+### Api service
+
+Next, let's build a service with two endpoints, one that will return a string normally and one that will be slowed artificially so that it will return the data with some delay.
+
+```python title="quickstart.py"
+import time
+from flask import Flask
+
+app = Flask(__name__)
+
+# normal endpoint
+@app.route('/')
+def home():
+    return 'hello world!'
+
+# slowed endpoint with the `time` library
+@app.route('/slow')
+def slow():
+    time.sleep(3)
+    return 'hello world! from slow!'
+
+app.run(host='0.0.0.0', port=8080)
+```
+
+You can now start the server with
+```bash
+python example.py
+```
+
+and you will be able to reach the `localhost:8080/` & `localhost:8080/slow` endpoints for example from your browser or from a networking tool.
+
+The first one will return the string `hello world!` immediately while the second will take 3 seconds to return its string due to the `time.sleep(3)` call.
