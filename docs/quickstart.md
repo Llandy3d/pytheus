@@ -131,9 +131,60 @@ app.run(host='0.0.0.0', port=8080)
 
 You can now start the server with
 ```bash
-python example.py
+python quickstart.py
 ```
 
 and you will be able to reach the `localhost:8080/` & `localhost:8080/slow` endpoints for example from your browser or from a networking tool.
 
 The first one will return the string `hello world!` immediately while the second will take 3 seconds to return its string due to the `time.sleep(3)` call.
+
+### Adding metrics
+
+Now that we have a service with two endpoints we want to measure how much time it takes for them to respond. How many requests are handled in less than 1 second ? How many are handled over 5 seconds ? What is the 95th percentile ?
+
+We can answer those questions with metrics.
+
+---
+
+First of all we import the metric class (`Histogram` makes sense for what we want to track):
+
+```python
+from pytheus.metrics import Histogram
+```
+
+then we instantiate our metric, we need to give it a name and a documentation string explaining what the metric does.
+
+```python
+http_request_duration_seconds = Histogram(
+    'http_request_duration_seconds', 'documenting the metric..'
+)
+```
+
+!!! note
+
+    The metric name parameter passed in and the variable name don't have to be the same, here I've done it because it makes it easier to understand what a particular metric is observing.
+
+    The documentation string is a mandatory parameter but can be the empty string `""` although it would be better to document the metric.
+
+Now what is left to do is to use our metric to observe the endpoints, we can either use the `time()` method of the metric class or we can use the shortcut of using the metric as a decorator.
+
+We will show both approaches, one used for each endpoint:
+
+```python hl_lines="3" title="track time with the context manager"
+@app.route('/')
+def home():
+    with http_request_duration_seconds.time():
+        return 'hello world!'
+```
+
+```python hl_lines="2" title="track time with the decorator shortcut"
+@app.route('/slow')
+@http_request_duration_seconds
+def slow():
+    time.sleep(3)
+    return 'hello world! from slow!'
+```
+
+Congratulations! You have instrumented your service and you are now collecting metrics. 🎉
+
+But wait, where are the metrics?
