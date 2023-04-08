@@ -66,8 +66,8 @@ from pytheus.exposition import generate_metrics, PROMETHEUS_CONTENT_TYPE
 
 app = Flask(__name__)
 
-page_visit_latency_seconds = Histogram(
-    'page_visit_latency_seconds', 'documenting the metric..'
+http_request_duration_seconds = Histogram(
+    'http_request_duration_seconds', 'documenting the metric..'
 )
 
 @app.route('/metrics')
@@ -78,12 +78,12 @@ def metrics():
 # track time with the context manager
 @app.route('/')
 def home():
-    with page_visit_latency_seconds.time():
+    with http_request_duration_seconds.time():
         return 'hello world!'
 
 # alternatively you can also track time with the decorator shortcut
 @app.route('/slow')
-@page_visit_latency_seconds
+@http_request_duration_seconds
 def slow():
     time.sleep(3)
     return 'hello world! from slow!'
