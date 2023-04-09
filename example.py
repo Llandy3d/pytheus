@@ -1,10 +1,10 @@
 import time
 
-from flask import Flask
+from flask import Flask, Response
 
 from pytheus.backends import load_backend
 from pytheus.backends.redis import MultiProcessRedisBackend
-from pytheus.exposition import generate_metrics
+from pytheus.exposition import PROMETHEUS_CONTENT_TYPE, generate_metrics
 from pytheus.metrics import Histogram
 
 load_backend(
@@ -27,7 +27,8 @@ histogram_labeled = Histogram(
 
 @app.route("/metrics")
 def metrics():
-    return generate_metrics()
+    data = generate_metrics()
+    return Response(data, headers={"Content-Type": PROMETHEUS_CONTENT_TYPE})
 
 
 # track time with the context manager

@@ -30,6 +30,11 @@ redis = [
   "redis >= 4.0.0",
 ]
 
+docs = [
+    "mkdocs == 1.4.2",
+    "mkdocs-material == 9.1.5",
+]
+
 [tool.mypy]
 disallow_untyped_defs = true
 ignore_missing_imports = true
