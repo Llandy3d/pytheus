@@ -12,7 +12,8 @@ classifiers = [
 ]
 
 [project.urls]
-repository = "https://github.com/Llandy3d/pytheus"
+Homepage = "https://github.com/Llandy3d/pytheus"
+Documentation = "https://pythe.us"
 
 [project.optional-dependencies]
 test = [
