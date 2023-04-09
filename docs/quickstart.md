@@ -276,3 +276,30 @@ def slow():
 
 app.run(host='0.0.0.0', port=8080)
 ```
+
+### Loading a different Backend
+
+The backend used by the metrics can be changed with the `load_backend` function. This changes where the information is stored and retrieved while leaving the api the same so that there is no difference between a single and a multiprocess use of the library.
+
+This library includes the `MultiProcessRedisBackend`, a Backend that makes use of Redis to support multi process python applications. If you prefer to use something different, you can create your own backend by respecting the `Backend` protocol.
+
+All we need to do to change from the `SingleProcessBackend`(used by default) to the `MultiProcessRedisBackend` is:
+
+```python
+from pytheus.backends import load_backend
+from pytheus.backends.redis import MultiProcessRedisBackend
+
+load_backend(
+    backend_class=MultiProcessRedisBackend,
+    backend_config={"host": "127.0.0.1", "port": 6379},
+)
+```
+
+- `backend_class`: is the class respecting the `Backend` protocol that we want to use.
+- `backend_config`: is the configuration that you want to pass to the class. It's a dictionary.
+
+!!! tip
+
+    It is also possible to define the values to be used with environment variables: `PYTHEUS_BACKEND_CLASS` & `PYTHEUS_BACKEND_CONFIG`
+
+That's it! By adding these lines our metrics are now making use of redis and will work with multiple processes :)
