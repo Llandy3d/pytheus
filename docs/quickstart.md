@@ -281,7 +281,7 @@ app.run(host='0.0.0.0', port=8080)
 
 The backend used by the metrics can be changed with the `load_backend` function. This changes where the information is stored and retrieved while leaving the api the same so that there is no difference between a single and a multiprocess use of the library.
 
-This library includes the `MultiProcessRedisBackend`, a Backend that makes use of Redis to support multi process python applications. If you prefer to use something different, you can create your own backend by respecting the `Backend` protocol.
+This library includes the `MultiProcessRedisBackend`, a Backend that makes use of [Redis](https://redis.io/) to support multi process python applications. If you prefer to use something different, you can create your own backend by respecting the `Backend` protocol.
 
 All we need to do to change from the `SingleProcessBackend`(used by default) to the `MultiProcessRedisBackend` is:
 
