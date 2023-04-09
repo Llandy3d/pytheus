@@ -33,6 +33,7 @@ nav:
   - Introduction: 'index.md'
   - Usage:
     - Quickstart: quickstart.md
+    - Labels: labels.md
 
 markdown_extensions:
   - pymdownx.highlight:
