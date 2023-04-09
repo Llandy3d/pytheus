@@ -119,3 +119,47 @@ http_request_duration_seconds_side_service = http_request_duration_seconds.label
 !!! note
 
     `default_labels` takes a `dict[str, str]`
+
+### Partial labels
+
+With the `labels()` method returning a new instance of the metric class, it's possible to have instances that are not observable but have some defined values. This would be useful if there are a set of labels that you want to share and just a few remaining ones are different.
+
+Let's say that we have two systems `a` & `b`, and we want to meausure how many times a cache gets hit plus we want a label telling us the origin of the call, we can define the metric like this:
+
+```python
+cache_hit_count_total = Counter(
+    'cache_hit_count_total',
+    'number of time the cache got it',
+    required_labels=['system', 'origin'],
+)
+
+cache_hit_count_total_system_a = cache_hit_count_total.labels({'system': 'a'})
+cache_hit_count_total_system_b = cache_hit_count_total.labels({'system': 'b'})
+```
+
+we defined two partial metrics with a label set for system `a` and one for system `b`. These are partial labels because if you try to observe them they will raise an error since not all the required labels are set.
+
+We can then use them to observe the metrics avoiding the repetition of having to define the system each time:
+
+```python
+cache_hit_count_total_system_a.labels({'origin': 'function_a'}).inc()
+cache_hit_count_total_system_a.labels({'origin': 'function_b'}).inc()
+
+cache_hit_count_total_system_b.labels({'origin': 'function_a'}).inc()
+```
+
+As you can see there could be some repetition from the previous example if the metric would be used in different places calling `labels()` again and again is annoying so we can create a new variable to hold a metric with also the `origin` label set:
+
+```python
+cache_hit_count_total_system_a_with_origin.labels({'origin': 'function_a'})
+
+cache_hit_count_total_system_a_with_origin.inc()
+```
+
+This is the flexibility of partial labels, you can "cache" into variables your metric like you want and build upon it for what it makes sense for your use case.
+
+!!! note
+
+    Partial labels are built in an incremental way, meaning that each new instance returned when calling `labels(...)` will return an instance with the previous labels set.
+
+    If you call the `labels({})` method with an empty dicy `{}` it will just return the same instance.
