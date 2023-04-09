@@ -86,3 +86,36 @@ page_hit_total_with_get.inc()
     Under the hood there is an `_MetricCollector` class that handles all the logic for all the labels combinations, while the object you interact with is a `_Metric` object.
 
     When you call the `labels()` method on a metric object you will receive a new `_Metric` instance with the labels set. This allows for partial labels!
+
+### Default labels
+
+Default labels allow you to define a value that will be used by default for a set of required labels.
+
+For example you might want to measure the duration of http requests from different services with the same metric name, it would be annoying having to set that label everytime so we can just define a default to use and possibly overwrite it when needed!
+
+```python
+http_request_duration_seconds = Histogram(
+    'http_request_duration_seconds',
+    'documenting the metric..',
+    required_labels=['service'],
+    default_labels={'service': 'main_service'},
+)
+```
+
+we can observe it directly even if there is a required label since it's configured with a default value:
+
+```python
+http_request_duration_seconds.observe(1)
+```
+
+or we can override the default value:
+
+```python
+http_request_duration_seconds_side_service = http_request_duration_seconds.labels(
+    {'service': 'side_service'}
+)
+```
+
+!!! note
+
+    `default_labels` takes a `dict[str, str]`
