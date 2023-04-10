@@ -18,6 +18,8 @@ from pytheus.metrics import Counter
 cache_hit_total = Counter(name='cache_hit_total', description='number of times the cache got it')
 ```
 
+---
+
 ### Increment the value
 
 Now it's possible to increment the count by calling the `inc()`:
@@ -37,6 +39,8 @@ cache_hit_total.inc(7)
 !!! warning
 
     `inc()` accepts only positive values as counters cannot decrease.
+
+---
 
 ### Count Exceptions
 
@@ -61,6 +65,8 @@ with counter.count_exceptions((IndexError, ValueError)):
 !!! tip
 
     `count_exceptions` accepts an `Exception` or a tuple of exceptions.
+
+---
 
 ### As a Decorator
 

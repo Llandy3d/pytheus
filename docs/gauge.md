@@ -73,6 +73,8 @@ with gauge.track_inprogress():
     do_something()
 ```
 
+---
+
 ### Track time
 
 A `Gauge` can time a piece of code, it will set the value to the duration in seconds if you call the `time()` context manager:
@@ -81,6 +83,8 @@ A `Gauge` can time a piece of code, it will set the value to the duration in sec
 with gauge.time():
     do_something()
 ```
+
+---
 
 ### As a Decorator
 

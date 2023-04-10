@@ -65,6 +65,8 @@ page_hit_total{method="POST"} 3.0
 
 this allows us to check the `page_hit_total` metric in prometheus, or if we want specifics we can check the values for a specific label like `page_hit_total{method="GET"}`!
 
+---
+
 ### Caching the instance with a set label
 
 Calling everytime the `labels()` method is tiresome, so it's possible to assign the value it returns to a new variable, it returns an instance of the metric class you used with the label already set!
@@ -86,6 +88,8 @@ page_hit_total_with_get.inc()
     Under the hood there is an `_MetricCollector` class that handles all the logic for all the labels combinations, while the object you interact with is a `_Metric` object.
 
     When you call the `labels()` method on a metric object you will receive a new `_Metric` instance with the labels set. This allows for partial labels!
+
+---
 
 ### Default labels
 
@@ -119,6 +123,8 @@ http_request_duration_seconds_side_service = http_request_duration_seconds.label
 !!! note
 
     `default_labels` takes a `dict[str, str]`
+
+---
 
 ### Partial labels
 
