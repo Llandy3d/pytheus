@@ -36,6 +36,7 @@ nav:
     - Labels: labels.md
     - Counter: counter.md
     - Gauge: gauge.md
+    - Histogram: histogram.md
 
 markdown_extensions:
   - pymdownx.highlight:
