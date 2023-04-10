@@ -35,6 +35,7 @@ nav:
     - Quickstart: quickstart.md
     - Labels: labels.md
     - Counter: counter.md
+    - Gauge: gauge.md
 
 markdown_extensions:
   - pymdownx.highlight:

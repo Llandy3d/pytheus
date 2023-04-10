@@ -6,7 +6,7 @@ As the name suggests it's useful to count things, for example cache hits, number
 
 !!! tip
 
-    If you need a metric that can go up and down in value, checkout the `Gauge`.
+    If you need a metric that can go up and down in value, checkout the [Gauge](gauge.md).
 
 ## Usage
 
