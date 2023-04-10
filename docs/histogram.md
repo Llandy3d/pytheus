@@ -51,3 +51,37 @@ histogram = Histogram(
 !!! note
 
     The `+Inf` bucket will be added automatically, this is `float('inf')` in python
+
+---
+
+### Observe a value
+
+To observe a value you can call the `observe()` method:
+
+```python
+histogram.observe(0.4)
+```
+
+---
+
+### Track time
+
+You can track time with the `time()` context manager, it will track the duration in seconds:
+
+```python
+with histogram.time():
+    do_something()
+```
+
+---
+
+### As a Decorator
+
+
+When used as a decorator the `Histogram` will time the piece of code, syntactic sugar to the `time()` context manager:
+
+```python
+@histogram
+def do_something():
+    ...
+```
