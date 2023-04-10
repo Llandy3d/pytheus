@@ -72,3 +72,22 @@ You can use the `track_inprogress` context manager to track progress of things, 
 with gauge.track_inprogress():
     do_something()
 ```
+
+### Track time
+
+A `Gauge` can time a piece of code, it will set the value to the duration in seconds if you call the `time()` context manager:
+
+```python
+with gauge.time():
+    do_something()
+```
+
+### As a Decorator
+
+When used as a decorator the `Gauge` will time the piece of code, syntactic sugar to the `time()` context manager:
+
+```python
+@gauge
+def do_something():
+    ...
+```
