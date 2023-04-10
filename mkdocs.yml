@@ -34,6 +34,7 @@ nav:
   - Usage:
     - Quickstart: quickstart.md
     - Labels: labels.md
+    - Counter: counter.md
 
 markdown_extensions:
   - pymdownx.highlight:
