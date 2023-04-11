@@ -399,7 +399,7 @@ class Backend(Protocol):
 
 ### Initialization hook
 
-It's possible that you want to initialize your custom backed or there are one time steps that you want to happen on import.
+It's possible that you want to initialize your custom backend or there are one time steps that you want to happen on import.
 
 To achieve that you can use the class method hook called `_initialize` that accepts a `BackendConfig` parameter.
 
