@@ -74,7 +74,7 @@ from pytheus.metrics import Counter
 
 counter = Counter('cache_hit_total', 'description')
 print(counter._metric_value_backend.__class__)
-# <class 'pytheus.backends.SingleProcessBackend'>
+# <class 'pytheus.backends.base.SingleProcessBackend'>
 ```
 
 ---
