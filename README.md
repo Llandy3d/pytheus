@@ -2,7 +2,11 @@
 
 # pytheus
 
-playing with metrics
+*playing with metrics*
+
+---
+
+**Documentation**: https://pythe.us
 
 ---
 
