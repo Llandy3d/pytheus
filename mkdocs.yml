@@ -37,6 +37,7 @@ nav:
     - Counter: counter.md
     - Gauge: gauge.md
     - Histogram: histogram.md
+    - Registry: registry.md
     - Custom Collector: custom_collector.md
 
 markdown_extensions:
