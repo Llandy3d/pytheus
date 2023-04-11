@@ -33,6 +33,11 @@ nav:
   - Introduction: 'index.md'
   - Usage:
     - Quickstart: quickstart.md
+    - Labels: labels.md
+    - Counter: counter.md
+    - Gauge: gauge.md
+    - Histogram: histogram.md
+    - Custom Collector: custom_collector.md
 
 markdown_extensions:
   - pymdownx.highlight:
