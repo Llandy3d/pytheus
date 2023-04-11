@@ -38,6 +38,7 @@ nav:
     - Gauge: gauge.md
     - Histogram: histogram.md
     - Registry: registry.md
+    - Backend / Multiprocessing: backend.md
     - Custom Collector: custom_collector.md
 
 markdown_extensions:
