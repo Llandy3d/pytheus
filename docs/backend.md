@@ -62,3 +62,70 @@ You don't have to use these values in your implementation, they just need to be 
     def _initialize(cls, config: "BackendConfig") -> None:
         # initialization steps
     ```
+
+---
+
+## Default Backend
+
+The default backend used is a `SingleProcessBackend`. A thread-safe in-memory implementation that makes use of `threading.Lock`.
+
+```python
+from pytheus.metrics import Counter
+
+counter = Counter('cache_hit_total', 'description')
+print(counter._metric_value_backend.__class__)
+# <class 'pytheus.backends.SingleProcessBackend'>
+```
+
+---
+
+## Multiprocess Backend
+
+The library also includes a redis based implementation of the backend for supporting multi process python services: `MultiProcessRedisBackend`.
+
+This makes use of the `INCRBYFLOAT` & `HINCRBYFLOAT` redis operations that are `ATOMIC` and as redis is single-threaded it means that even if multiple clients try to update the same value we will end up with the correct one.
+
+---
+
+## Loading a different Backend
+
+To load a different backend you can make use of the `load_backend` function, for example for loading the `MultiProcessRedisBackend`:
+
+```python
+from pytheus.backends import load_backend
+from pytheus.backends.redis import MultiProcessRedisBackend
+
+load_backend(
+    backend_class=MultiProcessRedisBackend,
+    backend_config={"host": "127.0.0.1", "port": 6379},
+)
+```
+
+now when you create a metric it will use the configured backend:
+
+```python
+counter = Counter('cache_hit_total', 'description')
+print(counter._metric_value_backend.__class__)
+# <class 'pytheus.backends.redis.MultiProcessRedisBackend'>
+```
+
+!!! warning
+
+    This operation should be done before you create your metrics as an initialization step.
+
+!!! tip
+
+    `load_backend()` it's called automatically when you import the `pytheus` library and it supports environment variables to configure which backend to use and the config, so you can just set them without having to call the function yourself:
+
+    - `PYTHEUS_BACKEND_CLASS`: class to import, for example `pytheus.backends.redis.MultiProcessFileBackend`
+    - `PYTHEUS_BACKEND_CONFIG`: path to a `json` file containing the config
+
+!!! note
+
+    The function definition is:
+    ```python
+    def load_backend(
+        backend_class: type[Backend] | None = None,
+        backend_config: BackendConfig | None = None,
+    ) -> None:
+    ```
