@@ -51,7 +51,10 @@ class CustomCollector(Collector):
 
 class _MetricCollector:
     """
-    #TODO
+    This handles the core logic for a specific named metric.
+    It will do label validation, it will have the metric name and most importantly it will keep
+    track of all the Child instances so that when `collect()` is called it will retrieve all
+    the correct samples from all the possible observable Childrens.
     _labeled_metrics contains all observable metrics when required_labels is set.
     """
 
