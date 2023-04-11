@@ -301,7 +301,7 @@ counter = Counter(
     required_labels=["label_a", "label_b"],
 )
 print(counter._metric_value_backend.__class__)
-# <class 'pytheus.backends.SingleProcessBackend'>
+# <class 'pytheus.backends.base.SingleProcessBackend'>
 print(counter._metric_value_backend.config)
 # {}
 ```
@@ -309,7 +309,7 @@ print(counter._metric_value_backend.config)
 You can define environment configuration to have different defaults, using two environment variables:
 
 ```bash
-export PYTHEUS_BACKEND_CLASS="pytheus.backends.MultiProcessFileBackend"
+export PYTHEUS_BACKEND_CLASS="pytheus.backends.redis.MultiProcessRedisBackend"
 export PYTHEUS_BACKEND_CONFIG="./config.json"
 ```
 
@@ -317,7 +317,8 @@ Now, create the config file, `./config.json`:
 
 ```json
 {
-  "pytheus_file_directory": "./"
+  "host": "127.0.0.1",
+  "port":  6379
 }
 ```
 
@@ -332,9 +333,9 @@ counter = Counter(
     required_labels=["label_a", "label_b"],
 )
 print(counter._metric_value_backend.__class__)
-# <class 'pytheus.backends.MultiProcessFileBackend'>
+# <class 'pytheus.backends.redis.MultiProcessRedisBackend'>
 print(counter._metric_value_backend.config)
-# {'pytheus_file_directory': "./"}
+# {"host": "127.0.0.1", "port":  6379}
 ```
 
 You can also pass the values directly in Python, which would take precedence over the environment
@@ -343,7 +344,8 @@ setup we have just described:
 ```python
 
 from pytheus.metrics import Counter
-from pytheus.backends import MultiProcessRedisBackend, load_backend
+from pytheus.backends import load_backend
+from pytheus.backends.redis import MultiProcessRedisBackend
 
 load_backend(
     backend_class=MultiProcessRedisBackend,
@@ -363,7 +365,7 @@ counter = Counter(
     required_labels=["label_a", "label_b"],
 )
 print(counter._metric_value_backend.__class__)
-# <class 'pytheus.backends.MultiProcessRedisBackend'>
+# <class 'pytheus.backends.redis.MultiProcessRedisBackend'>
 print(counter._metric_value_backend.config)
 # {'host': '127.0.0.1', 'port': 6379}
 ```
@@ -399,7 +401,7 @@ class Backend(Protocol):
 
 ### Initialization hook
 
-It's possible that you want to initialize your custom backed or there are one time steps that you want to happen on import.
+It's possible that you want to initialize your custom backend or there are one time steps that you want to happen on import.
 
 To achieve that you can use the class method hook called `_initialize` that accepts a `BackendConfig` parameter.
 

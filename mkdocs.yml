@@ -31,13 +31,18 @@ repo_url: https://github.com/Llandy3d/pytheus
 
 nav:
   - Introduction: 'index.md'
+  - Architecture: 'architecture.md'
   - Usage:
     - Quickstart: quickstart.md
     - Labels: labels.md
     - Counter: counter.md
     - Gauge: gauge.md
     - Histogram: histogram.md
+    - Registry: registry.md
+    - Backend / Multiprocessing: backend.md
     - Custom Collector: custom_collector.md
+  - Reference:
+    - Quickref: quickref.md
 
 markdown_extensions:
   - pymdownx.highlight:
