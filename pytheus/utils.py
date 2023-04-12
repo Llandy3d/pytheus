@@ -7,3 +7,6 @@ class MetricType(str, Enum):
     HISTOGRAM = "histogram"
     SUMMARY = "summary"
     UNTYPED = "untyped"
+
+    def __str__(self) -> str:
+        return self.value
