@@ -378,18 +378,25 @@ class Gauge(_Metric):
         yield
         self.dec()
 
-    # TODO: this could be configured to allow the decoration to be used
-    # with track_inprogress giving more flexibility.
-    def __call__(self, func: Callable) -> Callable:
+    def __call__(self, func: Callable | None = None, track_inprogress: bool = False) -> Callable:
         """
         When called acts as a decorator tracking the time taken by
         the wrapped function.
+
+        If passing the parameter `track_inprogress` as `True` it will instead increase while the
+        function is running and will decrease when it's finished.
         """
+        if func is None:
+            return functools.partial(self.__call__, track_inprogress=track_inprogress)
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):  # type: ignore
-            with self.time():
-                return func(*args, **kwargs)
+            if track_inprogress:
+                with self.track_inprogress():
+                    return func(*args, **kwargs)
+            else:
+                with self.time():
+                    return func(*args, **kwargs)
 
         return wrapper
 

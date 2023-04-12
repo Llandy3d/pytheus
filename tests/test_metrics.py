@@ -1,4 +1,5 @@
 import time
+from unittest import mock
 
 import pytest
 
@@ -442,6 +443,26 @@ class TestGauge:
 
     def test_as_decorator(self, gauge):
         @gauge
+        def test():
+            pass
+
+        test()
+        assert gauge._metric_value_backend.get() != 0
+
+    def test_as_decorator_with_track_inprogress(self, gauge):
+        backend_mock = mock.Mock()
+        gauge._metric_value_backend = backend_mock
+
+        @gauge(track_inprogress=True)
+        def test():
+            pass
+
+        test()
+        backend_mock.inc.assert_called()
+        backend_mock.dec.assert_called()
+
+    def test_as_decorator_with_track_inprogress_as_false(self, gauge):
+        @gauge(track_inprogress=False)
         def test():
             pass
 
