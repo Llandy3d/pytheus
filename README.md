@@ -239,6 +239,11 @@ with gauge.time():
 @gauge
 def do_something():
     ...
+
+# tracking progress is also available via decorator with a flag
+@gauge(track_inprogress=True)
+def do_something():
+    ...
 ```
 
 ---

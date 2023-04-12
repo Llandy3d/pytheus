@@ -95,3 +95,11 @@ When used as a decorator the `Gauge` will time the piece of code, syntactic suga
 def do_something():
     ...
 ```
+
+It is also possible to pass the `track_inprogress` flag to make the decorator work as syntactic sugar for the `track_inprogress` context manager:
+
+```python
+@gauge(track_inprogress=True)
+def do_something():
+    ...
+```
