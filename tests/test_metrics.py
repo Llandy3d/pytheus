@@ -520,6 +520,13 @@ class TestHistogram:
         assert histogram._buckets is not None
         assert len(histogram._buckets) == len(histogram._upper_bounds)
 
+    def test_labeled_observable_respects_custom_buckets(self):
+        buckets = [0.2, 0.5, 1]
+        histogram = Histogram("name", "desc", required_labels=["bob"], buckets=buckets)
+        child_histogram = histogram.labels({"bob": "cat"})
+        assert child_histogram._upper_bounds == histogram._upper_bounds
+        assert len(child_histogram._buckets) == len(histogram._upper_bounds)
+
     def test_collect(self):
         buckets = [0.2, 0.5, 1]
         histogram = Histogram("name", "desc", buckets=buckets)

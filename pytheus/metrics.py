@@ -225,29 +225,30 @@ class _Metric:
         else:
             labels_count = len(labels_)
 
+        # __init__ arguments for the child
+        child_kwargs = {
+            "name": self.name,
+            "description": self.description,
+            "collector": self._collector,
+            "labels": labels_,
+            "registry": self._registry,
+        }
+
+        # pass down buckets list to the child
+        if isinstance(self, Histogram):
+            child_kwargs["buckets"] = self._upper_bounds
+
         assert self._collector._required_labels is not None
         if labels_count != len(self._collector._required_labels):
             # does not add to collector
-            return self.__class__(
-                self.name,
-                self.description,
-                collector=self._collector,
-                labels=labels_,
-                registry=self._registry,
-            )
+            return self.__class__(**child_kwargs)  # type: ignore
 
         # add to collector
         sorted_label_values = tuple(v for _, v in sorted(labels_.items()))
         if sorted_label_values in self._collector._labeled_metrics:
             metric = self._collector._labeled_metrics[sorted_label_values]
         else:
-            metric = self.__class__(
-                self.name,
-                self.description,
-                collector=self._collector,
-                labels=labels_,
-                registry=self._registry,
-            )
+            metric = self.__class__(**child_kwargs)  # type: ignore
             self._collector._labeled_metrics[sorted_label_values] = metric
         return metric
 
