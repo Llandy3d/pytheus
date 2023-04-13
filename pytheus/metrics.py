@@ -14,7 +14,7 @@ from pytheus.exceptions import (
     UnobservableMetricException,
 )
 from pytheus.registry import REGISTRY, Collector, Registry
-from pytheus.utils import MetricType
+from pytheus.utils import InfFloat, MetricType
 
 Labels = dict[str, str]
 
@@ -460,9 +460,14 @@ class Histogram(_Metric):
                 f"buckets values are not in sorted order. {buckets} != {sorted_buckets}"
             )
 
-        # +inf is required so we always add it
-        if buckets[-1] != float("inf"):
-            buckets.append(float("inf"))
+        # +Inf is required so we always add it
+        last_bucket_value = buckets[-1]
+        if isinstance(last_bucket_value, InfFloat):
+            pass
+        elif last_bucket_value == float("inf"):
+            buckets[-1] = InfFloat("inf")
+        else:
+            buckets.append(InfFloat("inf"))
 
         self._upper_bounds = buckets
 

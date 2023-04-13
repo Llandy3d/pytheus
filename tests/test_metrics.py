@@ -10,7 +10,7 @@ from pytheus.exceptions import (
 )
 from pytheus.metrics import Counter, CustomCollector, Gauge, Histogram, _Metric, _MetricCollector
 from pytheus.registry import REGISTRY, CollectorRegistry
-from pytheus.utils import MetricType
+from pytheus.utils import InfFloat, MetricType
 
 
 @pytest.fixture
@@ -485,15 +485,31 @@ class TestHistogram:
         with pytest.raises(LabelValidationException):
             Histogram("name", "desc", required_labels=["bob", "le"])
 
-    def test_buckets_adds_inf_implicitly(self):
+    def test_buckets_adds_inf_implicitly_float_number(self):
         buckets = [0.2, 0.5, 1]
+        expected = [0.2, 0.5, 1, InfFloat("inf")]
         histogram = Histogram("name", "desc", buckets=buckets)
-        assert histogram._upper_bounds[-1] == float("inf")
+        assert histogram._upper_bounds == expected
+        assert isinstance(histogram._upper_bounds[-1], InfFloat)
+
+    def test_buckets_adds_inf_implicitly_float_inf(self):
+        buckets = [0.2, 0.5, 1, float("inf")]
+        expected = [0.2, 0.5, 1, InfFloat("inf")]
+        histogram = Histogram("name", "desc", buckets=buckets)
+        assert histogram._upper_bounds == expected
+        assert isinstance(histogram._upper_bounds[-1], InfFloat)
+
+    def test_buckets_adds_inf_implicitly_inf_float(self):
+        buckets = [0.2, 0.5, 1, InfFloat("inf")]
+        expected = [0.2, 0.5, 1, InfFloat("inf")]
+        histogram = Histogram("name", "desc", buckets=buckets)
+        assert histogram._upper_bounds == expected
+        assert isinstance(histogram._upper_bounds[-1], InfFloat)
 
     def test_buckets_with_sorted_order(self):
         buckets = [0.2, 0.5, 1]
         histogram = Histogram("name", "desc", buckets=buckets)
-        assert histogram._upper_bounds == buckets + [float("inf")]
+        assert histogram._upper_bounds == buckets + [InfFloat("inf")]
 
     def test_buckets_with_unsorted_order_fails(self):
         with pytest.raises(BucketException):
