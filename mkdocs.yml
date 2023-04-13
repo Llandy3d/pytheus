@@ -43,6 +43,7 @@ nav:
     - Custom Collector: custom_collector.md
   - Reference:
     - Quickref: quickref.md
+    - Changelog: changelog.md
 
 markdown_extensions:
   - pymdownx.highlight:

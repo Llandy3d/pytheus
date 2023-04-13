@@ -1,0 +1,17 @@
+# Changelog
+
+## Unreleased
+
+## 0.0.8
+
+- `Histogram` now passes custom buckets to child instances
+
+## 0.0.7
+
+- fix `MetricType` string representation for python 3.11
+
+## 0.0.6
+
+First release ready to be tested 🎉
+
+Redis multiprocess backend support still experimental.
