@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.0.9
+
 - The `inf` histogram bucket label will now be exported as `+Inf` in line with the other clients
 
 ## 0.0.8
