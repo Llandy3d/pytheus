@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- MultiProcessRedisBackend:
+  - initialize `key` on redis on instantiation
+  - update expiry when retrieving a key
+
 ## 0.0.9
 
 - The `inf` histogram bucket label will now be exported as `+Inf` in line with the other clients

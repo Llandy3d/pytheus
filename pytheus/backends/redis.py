@@ -106,4 +106,7 @@ class MultiProcessRedisBackend:
             value = self.CONNECTION_POOL.hget(self._key_name, self._labels_hash)
         else:
             value = self.CONNECTION_POOL.get(self._key_name)
-        return float(value) if value else 0.0
+
+        self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
+        assert value
+        return float(value)
