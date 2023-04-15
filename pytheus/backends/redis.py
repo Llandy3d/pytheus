@@ -47,6 +47,9 @@ class MultiProcessRedisBackend:
         elif metric._labels:
             self._labels_hash = "-".join(sorted(metric._labels.values()))
 
+        # initialize the key in redis
+        self._init_key()
+
     @classmethod
     def _initialize(cls, config: "BackendConfig") -> None:
         cls.CONNECTION_POOL = redis.Redis(
@@ -54,6 +57,21 @@ class MultiProcessRedisBackend:
             decode_responses=True,
         )
         cls.CONNECTION_POOL.ping()
+
+    def _init_key(self) -> None:
+        """
+        If the key doesn't exist in redis we initialize it and set the expiry time.
+        `incrbyfloat` & `hincrbyfloat` are used so if for any reason multiple clients try to
+        initialize the same key, it will be idempotent.
+        """
+        assert self.CONNECTION_POOL is not None
+        if not self.CONNECTION_POOL.exists(self._key_name):
+            if self._labels_hash:
+                self.CONNECTION_POOL.hincrbyfloat(self._key_name, self._labels_hash, 0.0)
+            else:
+                self.CONNECTION_POOL.incrbyfloat(self._key_name, 0.0)
+
+        self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
 
     def inc(self, value: float) -> None:
         assert self.CONNECTION_POOL is not None
