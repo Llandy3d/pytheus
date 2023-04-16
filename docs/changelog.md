@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.0.10
+
 - MultiProcessRedisBackend:
   - initialize `key` on redis on instantiation
   - update expiry when retrieving a key
