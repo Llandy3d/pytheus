@@ -50,3 +50,58 @@ class TestMultiProcessRedisBackend:
     def test_set(self, backend):
         backend.set(3.0)
         assert backend.get() == 3.0
+
+
+def test_create_backend():
+    counter = Counter("name", "desc")
+    backend = MultiProcessRedisBackend({}, counter)
+
+    assert backend._key_name == counter.name
+    assert backend._histogram_bucket is None
+    assert backend._labels_hash is None
+    assert pool.exists(backend._key_name)
+
+
+def test_create_backend_labeled():
+    counter = Counter("name", "desc", required_labels=["bob"])
+    counter = counter.labels({"bob": "cat"})
+    backend = MultiProcessRedisBackend({}, counter)
+
+    assert backend._key_name == counter.name
+    assert backend._histogram_bucket is None
+    assert backend._labels_hash == "cat"
+    assert pool.hexists(backend._key_name, backend._labels_hash)
+
+
+def test_create_backend_labeled_with_default():
+    counter = Counter("name", "desc", required_labels=["bob"], default_labels={"bob": "cat"})
+    backend = MultiProcessRedisBackend({}, counter)
+
+    assert backend._key_name == counter.name
+    assert backend._histogram_bucket is None
+    assert backend._labels_hash == "cat"
+    assert pool.hexists(backend._key_name, backend._labels_hash)
+
+
+def test_create_backend_labeled_with_default_mixed():
+    counter = Counter(
+        "name", "desc", required_labels=["bob", "bobby"], default_labels={"bob": "cat"}
+    )
+    counter = counter.labels({"bobby": "fish"})
+    backend = MultiProcessRedisBackend({}, counter)
+
+    assert backend._key_name == counter.name
+    assert backend._histogram_bucket is None
+    assert backend._labels_hash == "cat-fish"
+    assert pool.hexists(backend._key_name, backend._labels_hash)
+
+
+def test_create_backend_with_histogram_bucket():
+    histogram_bucket = "+Inf"
+    counter = Counter("name", "desc")
+    backend = MultiProcessRedisBackend({}, counter, histogram_bucket=histogram_bucket)
+
+    assert backend._key_name == f"{counter.name}:{histogram_bucket}"
+    assert backend._histogram_bucket == histogram_bucket
+    assert backend._labels_hash is None
+    assert pool.exists(f"{counter.name}:{histogram_bucket}")
