@@ -5,6 +5,11 @@
     <em>playing with metrics</em>
 </p>
 
+[![pypi](https://img.shields.io/pypi/v/pytheus.svg)](https://pypi.python.org/pypi/pytheus)
+[![versions](https://img.shields.io/pypi/pyversions/pytheus.svg)](https://github.com/Llandy3d/pytheus)
+[![license](https://img.shields.io/github/license/Llandy3d/pytheus.svg)](https://github.com/Llandy3d/pytheus/blob/main/LICENSE)
+[![downloads](https://pepy.tech/badge/pytheus/month)](https://pepy.tech/project/pytheus)
+
 # Introduction
 
 pytheus is a modern python library for collecting [prometheus](https://prometheus.io/docs/introduction/overview/) metrics built with multiprocessing in mind.
