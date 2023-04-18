@@ -2,7 +2,7 @@ import importlib
 import json
 import os
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Optional, Protocol, runtime_checkable
 
 from pytheus.exceptions import InvalidBackendClassException, InvalidBackendConfigException
 
@@ -25,7 +25,7 @@ class Backend(Protocol):
         self,
         config: BackendConfig,
         metric: "_Metric",
-        histogram_bucket: str | None = None,
+        histogram_bucket: Optional[str] = None,
     ) -> None:
         ...
 
@@ -66,8 +66,8 @@ def _import_backend_class(full_import_path: str) -> type[Backend]:
 
 
 def load_backend(
-    backend_class: type[Backend] | None = None,
-    backend_config: BackendConfig | None = None,
+    backend_class: Optional[type[Backend]] = None,
+    backend_config: Optional[BackendConfig] = None,
 ) -> None:
     # Load default backend class
     global BACKEND_CLASS
@@ -98,7 +98,7 @@ def load_backend(
         BACKEND_CLASS._initialize(BACKEND_CONFIG)
 
 
-def get_backend(metric: "_Metric", histogram_bucket: str | None = None) -> Backend:
+def get_backend(metric: "_Metric", histogram_bucket: Optional[str] = None) -> Backend:
     # Probably ok not to cache this and allow each metric to keep its own
     return BACKEND_CLASS(BACKEND_CONFIG, metric, histogram_bucket=histogram_bucket)
 
@@ -114,7 +114,7 @@ class SingleProcessBackend:
         self,
         config: BackendConfig,
         metric: "_Metric",
-        histogram_bucket: str | None = None,
+        histogram_bucket: Optional[str] = None,
     ) -> None:
         self._value = 0.0
         self._lock = Lock()

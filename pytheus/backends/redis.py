@@ -1,5 +1,5 @@
 from contextvars import ContextVar
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import redis
 
@@ -24,13 +24,13 @@ class MultiProcessRedisBackend:
     (ex. maybe store all dimensions in the same hash and be smart on retrieving everything...)
     """
 
-    CONNECTION_POOL: redis.Redis | None = None
+    CONNECTION_POOL: Optional[redis.Redis] = None
 
     def __init__(
         self,
         config: "BackendConfig",
         metric: "_Metric",
-        histogram_bucket: str | None = None,
+        histogram_bucket: Optional[str] = None,
     ) -> None:
         self._key_name = metric._collector.name
         self._labels_hash = None
