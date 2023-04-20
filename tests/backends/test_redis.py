@@ -51,6 +51,10 @@ class TestMultiProcessRedisBackend:
         backend.set(3.0)
         assert backend.get() == 3.0
 
+    def test_get_handles_remote_key_deletion(self, backend):
+        pool.flushall()
+        assert backend.get() == 0.0
+
 
 def test_create_backend():
     counter = Counter("name", "desc")
