@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.0.11
+
+- MultiProcessRedisBackend:
+    - handle `get` with unexpected key deletion
+
 ## 0.0.10
 
 - MultiProcessRedisBackend:
