@@ -1,6 +1,6 @@
 [project]
 name = "pytheus"
-version = "0.0.10"
+version = "0.0.11"
 authors = [
   { name="Llandy Riveron Del Risco", email="llandy3d@gmail.com" },
 ]
