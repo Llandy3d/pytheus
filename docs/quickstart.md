@@ -233,7 +233,7 @@ http_request_duration_seconds_bucket{le="1"} 0.0
 http_request_duration_seconds_bucket{le="2.5"} 0.0
 http_request_duration_seconds_bucket{le="5"} 0.0
 http_request_duration_seconds_bucket{le="10"} 0.0
-http_request_duration_seconds_bucket{le="inf"} 0.0
+http_request_duration_seconds_bucket{le="+Inf"} 0.0
 http_request_duration_seconds_sum 0.0
 http_request_duration_seconds_count 0.0
 ```
