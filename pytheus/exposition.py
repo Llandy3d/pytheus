@@ -7,6 +7,11 @@ from pytheus.registry import REGISTRY, Collector, Registry
 LINE_SEPARATOR = os.linesep
 LABEL_SEPARATOR = ","
 PROMETHEUS_CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
+LABEL_CHARACTERS_TO_ESCAPE = {
+    "\\": "\\\\",  # \ -> \\
+    '"': '\\"',  # " -> \"
+    "\n": "\\n",  # \n -> \n (escaped)
+}
 
 
 def generate_metrics(registry: Registry = REGISTRY) -> str:
@@ -21,10 +26,16 @@ def generate_metrics(registry: Registry = REGISTRY) -> str:
     return output
 
 
+def _escape_value(value: str) -> str:
+    for original, replacement in LABEL_CHARACTERS_TO_ESCAPE.items():
+        value = value.replace(original, replacement)
+    return value
+
+
 def format_labels(labels: Labels | None) -> str:
     if not labels:
         return ""
-    label_str = (f'{name}="{value}"' for name, value in labels.items())
+    label_str = (f'{name}="{_escape_value(value)}"' for name, value in labels.items())
     return f"{{{LABEL_SEPARATOR.join(label_str)}}}"
 
 
