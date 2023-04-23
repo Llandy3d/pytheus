@@ -27,4 +27,4 @@ jobs:
       - uses: pre-commit/action@v3.0.0
       - name: Run Tests
         run: |
-          tox -e py
+          pytest
