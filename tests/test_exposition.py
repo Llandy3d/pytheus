@@ -1,4 +1,4 @@
-from pytheus.exposition import generate_metrics
+from pytheus.exposition import _escape_help, format_labels, generate_metrics
 from pytheus.metrics import Counter, Histogram
 from pytheus.registry import REGISTRY, CollectorRegistry
 
@@ -87,3 +87,35 @@ class TestExposition:
         assert metrics_text == (
             '# HELP hello world\n# TYPE hello histogram\nhello_bucket{bob="a",le="0.005"} 0.0\nhello_bucket{bob="a",le="0.01"} 0.0\nhello_bucket{bob="a",le="0.025"} 0.0\nhello_bucket{bob="a",le="0.05"} 0.0\nhello_bucket{bob="a",le="0.1"} 0.0\nhello_bucket{bob="a",le="0.25"} 0.0\nhello_bucket{bob="a",le="0.5"} 1.0\nhello_bucket{bob="a",le="1"} 1.0\nhello_bucket{bob="a",le="2.5"} 1.0\nhello_bucket{bob="a",le="5"} 1.0\nhello_bucket{bob="a",le="10"} 1.0\nhello_bucket{bob="a",le="+Inf"} 1.0\nhello_sum{bob="a"} 0.4\nhello_count{bob="a"} 1.0\nhello_bucket{bob="default",le="0.005"} 0.0\nhello_bucket{bob="default",le="0.01"} 0.0\nhello_bucket{bob="default",le="0.025"} 0.0\nhello_bucket{bob="default",le="0.05"} 0.0\nhello_bucket{bob="default",le="0.1"} 0.0\nhello_bucket{bob="default",le="0.25"} 0.0\nhello_bucket{bob="default",le="0.5"} 0.0\nhello_bucket{bob="default",le="1"} 0.0\nhello_bucket{bob="default",le="2.5"} 0.0\nhello_bucket{bob="default",le="5"} 0.0\nhello_bucket{bob="default",le="10"} 0.0\nhello_bucket{bob="default",le="+Inf"} 0.0\nhello_sum{bob="default"} 0.0\nhello_count{bob="default"} 0.0\n'
         )
+
+    def test_generate_metrics_respects_escaping(self):
+        registry = CollectorRegistry()
+        counter = Counter(
+            "http_req_total", 'slash\\quote"newline\n', required_labels=["bob"], registry=registry
+        )
+        counter.labels({"bob": 'slash\\quote"newline\n'})
+        metrics_text = generate_metrics(registry)
+        assert metrics_text == (
+            '# HELP http_req_total slash\\\\quote"newline\\n\n'
+            "# TYPE http_req_total counter\n"
+            'http_req_total{bob="slash\\\\quote\\"newline\\n"} 0.0\n'
+            ""
+        )
+
+    def test_format_labels_escapes_characters(self):
+        # \ -> \\
+        # " -> \"
+        # \n -> \n (escaped)
+        labels = {"bob": 'slash\\ quote" newline\n'}
+        expected = '{bob="slash\\\\ quote\\" newline\\n"}'
+        formatted_string = format_labels(labels)
+
+        assert formatted_string == expected
+
+    def test_escape_help(self):
+        # \ -> \\
+        # \n -> \n (escaped)
+        help_text = 'slash\\ quote" newline\n'
+        expected = 'slash\\\\ quote" newline\\n'
+
+        assert _escape_help(help_text) == expected

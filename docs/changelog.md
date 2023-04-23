@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Escape `help` & `label_values` during exposition
+
 ## 0.0.11
 
 - MultiProcessRedisBackend:
