@@ -4,6 +4,8 @@
 
 *playing with metrics*
 
+
+[![ci](https://github.com/Llandy3d/pytheus/workflows/ci/badge.svg?event=push)](https://github.com/Llandy3d/pytheus/actions?query=event%3Apush+branch%3Amain+workflow%3Aci)
 [![pypi](https://img.shields.io/pypi/v/pytheus.svg)](https://pypi.python.org/pypi/pytheus)
 [![versions](https://img.shields.io/pypi/pyversions/pytheus.svg)](https://github.com/Llandy3d/pytheus)
 [![license](https://img.shields.io/github/license/Llandy3d/pytheus.svg)](https://github.com/Llandy3d/pytheus/blob/main/LICENSE)
