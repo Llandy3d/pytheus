@@ -47,13 +47,21 @@ class MultiProcessRedisBackend:
         elif metric._labels:
             self._labels_hash = "-".join(sorted(metric._labels.values()))
 
+        if "key_prefix" in config:
+            self._key_prefix = config["key_prefix"]
+            self._key_name = f"{self._key_prefix}-{self._key_name}"
+
         # initialize the key in redis
         self._init_key()
 
     @classmethod
     def _initialize(cls, config: "BackendConfig") -> None:
+        redis_config = config.copy()
+        if "key_prefix" in redis_config:
+            del redis_config["key_prefix"]
+
         cls.CONNECTION_POOL = redis.Redis(
-            **config,
+            **redis_config,
             decode_responses=True,
         )
         cls.CONNECTION_POOL.ping()
