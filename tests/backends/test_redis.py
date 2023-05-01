@@ -217,10 +217,57 @@ def test_multiple_metrics_with_same_name_labeled_with_redis_do_overlap_on_shared
 
     counter_a.labels({"bob": "cat"})
     counter_b.labels({"bob": "bobby"})
-    counter_b.labels({"bob": "cat"})
+    counter_b.labels({"bob": "cat"}).inc()
 
     first_collector_metrics_count = len(list(first_collector.collect().__next__().collect()))
     second_collector_metrics_count = len(list(second_collector.collect().__next__().collect()))
 
     assert first_collector_metrics_count == 1
     assert second_collector_metrics_count == 2
+    assert counter_a.labels({"bob": "cat"})._metric_value_backend.get() == 1
+    assert counter_b.labels({"bob": "cat"})._metric_value_backend.get() == 1
+
+
+@mock.patch.object(MultiProcessRedisBackend, "_initialize")
+def test_multiple_metrics_with_same_name_with_redis_key_prefix(_mock_initialize):
+    first_collector = CollectorRegistry()
+    second_collector = CollectorRegistry()
+
+    load_backend(MultiProcessRedisBackend, {"key_prefix": "a"})
+    counter_a = Counter("shared_name", "description", registry=first_collector)
+    load_backend(MultiProcessRedisBackend, {"key_prefix": "b"})
+    counter_b = Counter("shared_name", "description", registry=second_collector)
+
+    counter_a.inc()
+
+    assert counter_a._metric_value_backend.get() == 1.0
+    assert counter_b._metric_value_backend.get() == 0
+
+
+@mock.patch.object(MultiProcessRedisBackend, "_initialize")
+def test_multiple_metrics_with_same_name_labeled_with_redis_key_name_do_not_overlap_on_shared_child(
+    _mock_initialize,
+):
+    first_collector = CollectorRegistry()
+    second_collector = CollectorRegistry()
+
+    load_backend(MultiProcessRedisBackend, {"key_prefix": "a"})
+    counter_a = Counter(
+        "shared_name", "description", required_labels=["bob"], registry=first_collector
+    )
+    counter_a.labels({"bob": "cat"})
+    load_backend(MultiProcessRedisBackend, {"key_prefix": "b"})
+    counter_b = Counter(
+        "shared_name", "description", required_labels=["bob"], registry=second_collector
+    )
+
+    counter_b.labels({"bob": "bobby"})
+    counter_b.labels({"bob": "cat"}).inc()
+
+    first_collector_metrics_count = len(list(first_collector.collect().__next__().collect()))
+    second_collector_metrics_count = len(list(second_collector.collect().__next__().collect()))
+
+    assert first_collector_metrics_count == 1
+    assert second_collector_metrics_count == 2
+    assert counter_a.labels({"bob": "cat"})._metric_value_backend.get() == 0
+    assert counter_b.labels({"bob": "cat"})._metric_value_backend.get() == 1
