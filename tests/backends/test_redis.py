@@ -1,8 +1,12 @@
+from unittest import mock
+
 import pytest
 from fakeredis import FakeStrictRedis
 
+from pytheus.backends import load_backend
 from pytheus.backends.redis import MultiProcessRedisBackend
 from pytheus.metrics import Counter
+from pytheus.registry import CollectorRegistry
 
 # patch with fakeredis for tests
 pool = FakeStrictRedis()
@@ -109,3 +113,81 @@ def test_create_backend_with_histogram_bucket():
     assert backend._histogram_bucket == histogram_bucket
     assert backend._labels_hash is None
     assert pool.exists(f"{counter.name}:{histogram_bucket}")
+
+
+# multiple metrics with same name tests, especially when sharing redis as a backend
+
+
+@mock.patch.object(MultiProcessRedisBackend, "_initialize")
+def test_multiple_metrics_with_same_name_with_redis_overlap(_mock_initialize):
+    """
+    If sharing the same database, single value metrics will be overlapping.
+    """
+    load_backend(MultiProcessRedisBackend)
+    first_collector = CollectorRegistry()
+    second_collector = CollectorRegistry()
+
+    counter_a = Counter("shared_name", "description", registry=first_collector)
+    counter_b = Counter("shared_name", "description", registry=second_collector)
+
+    counter_a.inc()
+
+    assert counter_a._metric_value_backend.get() == 1.0
+    assert counter_b._metric_value_backend.get() == 1.0
+
+
+@mock.patch.object(MultiProcessRedisBackend, "_initialize")
+def test_multiple_metrics_with_same_name_labeled_with_redis_do_not_overlap(_mock_initialize):
+    """
+    Even while sharing the same database, labeled metrics won't be returned from collectors not
+    having the specific child instance.
+    """
+    load_backend(MultiProcessRedisBackend)
+    first_collector = CollectorRegistry()
+    second_collector = CollectorRegistry()
+
+    counter_a = Counter(
+        "shared_name", "description", required_labels=["bob"], registry=first_collector
+    )
+    counter_b = Counter(
+        "shared_name", "description", required_labels=["bob"], registry=second_collector
+    )
+
+    counter_a.labels({"bob": "cat"})
+    counter_b.labels({"bob": "bobby"})
+
+    first_collector_metrics_count = len(list(first_collector.collect().__next__().collect()))
+    second_collector_metrics_count = len(list(second_collector.collect().__next__().collect()))
+
+    assert first_collector_metrics_count == 1
+    assert second_collector_metrics_count == 1
+
+
+@mock.patch.object(MultiProcessRedisBackend, "_initialize")
+def test_multiple_metrics_with_same_name_labeled_with_redis_do_overlap_on_shared_child(
+    _mock_initialize,
+):
+    """
+    If sharing the same database, labeled metrics will be returned from collectors if having the
+    same child instance.
+    """
+    load_backend(MultiProcessRedisBackend)
+    first_collector = CollectorRegistry()
+    second_collector = CollectorRegistry()
+
+    counter_a = Counter(
+        "shared_name", "description", required_labels=["bob"], registry=first_collector
+    )
+    counter_b = Counter(
+        "shared_name", "description", required_labels=["bob"], registry=second_collector
+    )
+
+    counter_a.labels({"bob": "cat"})
+    counter_b.labels({"bob": "bobby"})
+    counter_b.labels({"bob": "cat"})
+
+    first_collector_metrics_count = len(list(first_collector.collect().__next__().collect()))
+    second_collector_metrics_count = len(list(second_collector.collect().__next__().collect()))
+
+    assert first_collector_metrics_count == 1
+    assert second_collector_metrics_count == 2
