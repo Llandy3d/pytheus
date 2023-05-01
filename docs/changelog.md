@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.0.12
+
 - Escape `help` & `label_values` during exposition
 - MultiProcessRedisBackend:
     - Add `key_prefix` config to specify stored key name prefix.
