@@ -85,6 +85,14 @@ The library also includes a redis based implementation of the backend for suppor
 
 This makes use of the `INCRBYFLOAT` & `HINCRBYFLOAT` redis operations that are `ATOMIC` and as redis is single-threaded it means that even if multiple clients try to update the same value we will end up with the correct one.
 
+!!! tip
+
+    When using the `MultiProcessRedisBackend` you will want to have a separate redis server o database specified per service you are monitoring. If you don't there is a risk that a metric with the same name on one service might overwrite one in another service.
+
+    If you plan to share the same redis server for multiple services, you can configure a prefix that will be added to all the stored metrics with the `key_prefix`.
+
+    For example: `{"host": "127.0.0.1", "port": 6379, "key_prefix": "serviceprefix"}`
+
 ---
 
 ## Loading a different Backend
