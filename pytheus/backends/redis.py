@@ -10,6 +10,11 @@ if TYPE_CHECKING:
 EXPIRE_KEY_TIME = 3600  # 1 hour
 
 
+from contextvars import ContextVar
+
+pipeline_var = ContextVar("pipeline", default=None)
+
+
 class MultiProcessRedisBackend:
     """
     Provides a multi-process backend that uses Redis.
@@ -81,6 +86,18 @@ class MultiProcessRedisBackend:
 
         self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
 
+    @classmethod
+    def _initialize_pipeline(cls):  # TODO: type hint
+        assert pipeline_var.get() is None
+        pipeline = cls.CONNECTION_POOL.pipeline()
+        pipeline_var.set(pipeline)
+
+    @staticmethod
+    def _execute_and_cleanup_pipeline():  # TODO: type hint
+        pipeline = pipeline_var.get()
+        pipeline_var.set(None)
+        return pipeline.execute()
+
     def inc(self, value: float) -> None:
         assert self.CONNECTION_POOL is not None
         if self._labels_hash:
@@ -109,15 +126,23 @@ class MultiProcessRedisBackend:
         self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
 
     def get(self) -> float:
+        pipeline = pipeline_var.get()
+        if pipeline:
+            pass
+
         assert self.CONNECTION_POOL is not None
         if self._labels_hash:
-            value = self.CONNECTION_POOL.hget(self._key_name, self._labels_hash)
+            # value = self.CONNECTION_POOL.hget(self._key_name, self._labels_hash)
+            pipeline.hget(self._key_name, self._labels_hash)
         else:
-            value = self.CONNECTION_POOL.get(self._key_name)
+            # value = self.CONNECTION_POOL.get(self._key_name)
+            pipeline.get(self._key_name)
 
-        if not value:
-            self._init_key()
-            return 0.0
+        # if not value:
+        #     self._init_key()
+        #     return 0.0
 
-        self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
-        return float(value)
+        # self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
+        pipeline.expire(self._key_name, EXPIRE_KEY_TIME)
+        # return float(value)
+        return 0
