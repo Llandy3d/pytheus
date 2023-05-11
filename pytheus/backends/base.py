@@ -103,6 +103,10 @@ def get_backend(metric: "_Metric", histogram_bucket: str | None = None) -> Backe
     return BACKEND_CLASS(BACKEND_CONFIG, metric, histogram_bucket=histogram_bucket)
 
 
+def get_backend_class() -> type[Backend]:
+    return BACKEND_CLASS
+
+
 class SingleProcessBackend:
     """Provides a single-process backend that uses a thread-safe, in-memory approach."""
 

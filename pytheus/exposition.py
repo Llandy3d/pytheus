@@ -1,6 +1,7 @@
 import os
 from typing import Callable
 
+from pytheus.backends.base import get_backend_class
 from pytheus.metrics import Labels, Sample
 from pytheus.registry import REGISTRY, Collector, Registry
 
@@ -23,39 +24,19 @@ def generate_metrics(registry: Registry = REGISTRY) -> str:
     Returns the metrics from the registry in prometheus text format
     """
 
-    from pytheus.backends.redis import MultiProcessRedisBackend
+    backend_class = get_backend_class()
+    if hasattr(backend_class, "_generate_samples"):
+        samples_dict = backend_class._generate_samples(registry)
 
-    MultiProcessRedisBackend._initialize_pipeline()
+        lines = (
+            generate_from_collector(collector, registry.prefix, samples)
+            for collector, samples in samples_dict.items()
+        )
+    else:
+        lines = (
+            generate_from_collector(collector, registry.prefix) for collector in registry.collect()
+        )
 
-    # collect samples that are not yet stored with the value
-    samples_dict = {}
-    # samples = []
-    for collector in registry.collect():
-        samples_list = []
-        # samples_dict[collector.name] = samples_list
-        samples_dict[collector] = samples_list
-        # exhaust the generator for the side effect of building the pipeline
-        for sample in collector.collect():
-            samples_list.append(sample)
-
-    pipeline_data = MultiProcessRedisBackend._execute_and_cleanup_pipeline()
-    values = [0 if item is None else item for item in pipeline_data if item not in (True, False)]
-
-    # assign correct values to the samples
-    for samples in samples_dict.values():
-        owned_values = values[: len(samples)]
-        values = values[len(samples) :]
-
-        for sample, value in zip(samples, owned_values):
-            sample.value = value
-
-    lines = (
-        generate_from_collector(collector, registry.prefix, samples)
-        for collector, samples in samples_dict.items()
-    )
-    # lines = (
-    #     generate_from_collector(collector, registry.prefix) for collector in registry.collect()
-    # )
     output = LINE_SEPARATOR.join(lines)
     output += "\n"
     return output
