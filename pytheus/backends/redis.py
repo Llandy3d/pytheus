@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 EXPIRE_KEY_TIME = 3600  # 1 hour
 
 
-pipeline_var = ContextVar("pipeline", default=None)
+pipeline_var: ContextVar[redis.client.Pipeline | None] = ContextVar("pipeline", default=None)
 
 
 class MultiProcessRedisBackend:
@@ -88,6 +88,7 @@ class MultiProcessRedisBackend:
 
     @classmethod
     def _initialize_pipeline(cls) -> None:
+        assert cls.CONNECTION_POOL is not None
         assert pipeline_var.get() is None
         pipeline = cls.CONNECTION_POOL.pipeline()
         pipeline_var.set(pipeline)
@@ -95,6 +96,7 @@ class MultiProcessRedisBackend:
     @staticmethod
     def _execute_and_cleanup_pipeline() -> list[float | bool | None]:
         pipeline = pipeline_var.get()
+        assert pipeline is not None
         pipeline_var.set(None)
         return pipeline.execute()
 
@@ -105,7 +107,7 @@ class MultiProcessRedisBackend:
         # collect samples that are not yet stored with the value
         samples_dict = {}
         for collector in registry.collect():
-            samples_list = []
+            samples_list: list[Sample] = []
             samples_dict[collector] = samples_list
             # collecting also builds requests in the pipeline
             for sample in collector.collect():
