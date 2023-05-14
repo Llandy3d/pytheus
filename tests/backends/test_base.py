@@ -9,6 +9,7 @@ from pytheus.backends.base import (
     SingleProcessBackend,
     _import_backend_class,
     get_backend,
+    get_backend_class,
     load_backend,
 )
 from pytheus.metrics import _Metric
@@ -100,6 +101,11 @@ def test_get_backend():
     backend_class = get_backend(metric)
 
     assert isinstance(backend_class, SingleProcessBackend)
+
+
+def test_get_backend_class():
+    load_backend()
+    assert get_backend_class() is SingleProcessBackend
 
 
 class TestSingleProcessBackend:

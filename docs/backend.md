@@ -63,6 +63,12 @@ You don't have to use these values in your implementation, they just need to be 
         # initialization steps
     ```
 
+!!! tip
+
+    A `Backend` can have a `_generate_samples` class method that would be used when generating the metrics instead of going over every metric get method.
+
+    This allows for flexibility in implementing faster implementations, an example is the use of pipelines in the `MultiProcessRedisBackend`
+
 ---
 
 ## Default Backend

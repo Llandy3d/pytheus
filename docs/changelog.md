@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Support for `_generate_samples` in Backend
+- MultiProcessRedisBackend:
+    - Improved scraping performance via pipelining
+
 ## 0.0.12
 
 - Escape `help` & `label_values` during exposition

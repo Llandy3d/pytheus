@@ -1,7 +1,8 @@
 import os
 from typing import Callable
 
-from pytheus.metrics import Labels
+from pytheus.backends.base import get_backend_class
+from pytheus.metrics import Labels, Sample
 from pytheus.registry import REGISTRY, Collector, Registry
 
 LINE_SEPARATOR = os.linesep
@@ -22,9 +23,20 @@ def generate_metrics(registry: Registry = REGISTRY) -> str:
     """
     Returns the metrics from the registry in prometheus text format
     """
-    lines = (
-        generate_from_collector(collector, registry.prefix) for collector in registry.collect()
-    )
+
+    backend_class = get_backend_class()
+    if hasattr(backend_class, "_generate_samples"):
+        samples_dict = backend_class._generate_samples(registry)
+
+        lines = (
+            generate_from_collector(collector, registry.prefix, samples)
+            for collector, samples in samples_dict.items()
+        )
+    else:
+        lines = (
+            generate_from_collector(collector, registry.prefix) for collector in registry.collect()
+        )
+
     output = LINE_SEPARATOR.join(lines)
     output += "\n"
     return output
@@ -49,7 +61,9 @@ def format_labels(labels: Labels | None) -> str:
     return f"{{{LABEL_SEPARATOR.join(label_str)}}}"
 
 
-def generate_from_collector(collector: Collector, prefix: str | None = None) -> str:
+def generate_from_collector(
+    collector: Collector, prefix: str | None = None, samples: list[Sample] | None = None
+) -> str:
     """
     Returns the metrics from a given collector in prometheus text format
     """
@@ -58,7 +72,10 @@ def generate_from_collector(collector: Collector, prefix: str | None = None) -> 
     type_text = f"# TYPE {metric_name} {collector.type_}"
     output = [help_text, type_text]
 
-    for sample in collector.collect():
+    # iterate over samples if passed directly else fallback to the collect() method
+    samples_list = samples if samples else collector.collect()
+
+    for sample in samples_list:
         label_str = format_labels(sample.labels)
         metric = f"{metric_name}{sample.suffix}{label_str} {sample.value}"
         output.append(metric)

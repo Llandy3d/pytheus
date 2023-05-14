@@ -1,13 +1,18 @@
+from contextvars import ContextVar
 from typing import TYPE_CHECKING
 
 import redis
 
 if TYPE_CHECKING:
     from pytheus.backends.base import BackendConfig
-    from pytheus.metrics import _Metric
+    from pytheus.metrics import Sample, _Metric
+    from pytheus.registry import Collector, Registry
 
 
 EXPIRE_KEY_TIME = 3600  # 1 hour
+
+
+pipeline_var: ContextVar[redis.client.Pipeline | None] = ContextVar("pipeline", default=None)
 
 
 class MultiProcessRedisBackend:
@@ -81,6 +86,47 @@ class MultiProcessRedisBackend:
 
         self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
 
+    @classmethod
+    def _initialize_pipeline(cls) -> None:
+        assert cls.CONNECTION_POOL is not None
+        assert pipeline_var.get() is None
+        pipeline = cls.CONNECTION_POOL.pipeline()
+        pipeline_var.set(pipeline)
+
+    @staticmethod
+    def _execute_and_cleanup_pipeline() -> list[float | bool | None]:
+        pipeline = pipeline_var.get()
+        assert pipeline is not None
+        pipeline_var.set(None)
+        return pipeline.execute()
+
+    @classmethod
+    def _generate_samples(cls, registry: "Registry") -> dict["Collector", list["Sample"]]:
+        cls._initialize_pipeline()
+
+        # collect samples that are not yet stored with the value
+        samples_dict = {}
+        for collector in registry.collect():
+            samples_list: list[Sample] = []
+            samples_dict[collector] = samples_list
+            # collecting also builds requests in the pipeline
+            for sample in collector.collect():
+                samples_list.append(sample)
+
+        pipeline_data = cls._execute_and_cleanup_pipeline()
+        values = [
+            0 if item is None else item for item in pipeline_data if item not in (True, False)
+        ]
+
+        # assign correct values to the samples
+        for samples in samples_dict.values():
+            owned_values = values[: len(samples)]
+            values = values[len(samples) :]
+
+            for sample, value in zip(samples, owned_values):
+                sample.value = value
+        return samples_dict
+
     def inc(self, value: float) -> None:
         assert self.CONNECTION_POOL is not None
         if self._labels_hash:
@@ -110,14 +156,22 @@ class MultiProcessRedisBackend:
 
     def get(self) -> float:
         assert self.CONNECTION_POOL is not None
-        if self._labels_hash:
-            value = self.CONNECTION_POOL.hget(self._key_name, self._labels_hash)
-        else:
-            value = self.CONNECTION_POOL.get(self._key_name)
+        client = self.CONNECTION_POOL
 
-        if not value:
-            self._init_key()
+        pipeline = pipeline_var.get()
+        if pipeline:
+            client = pipeline
+
+        if self._labels_hash:
+            value = client.hget(self._key_name, self._labels_hash)
+        else:
+            value = client.get(self._key_name)
+
+        client.expire(self._key_name, EXPIRE_KEY_TIME)
+
+        if pipeline:
             return 0.0
 
-        self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
-        return float(value)
+        # NOTE: get() directly is only used when collecting metrics & in tests so it makes sense
+        # to consider adding a method only for tests
+        return float(value) if value else 0.0

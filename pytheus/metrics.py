@@ -127,7 +127,8 @@ class _MetricCollector:
                 sample for metric in self._labeled_metrics.values() for sample in metric.collect()
             )
             if self._default_labels and self._metric._can_observe:
-                labeled_metrics = itertools.chain(labeled_metrics, self._metric.collect())
+                # note: this chaining order is important for correct matching with redis pipeline
+                labeled_metrics = itertools.chain(self._metric.collect(), labeled_metrics)
             return labeled_metrics
         else:
             return self._metric.collect()
