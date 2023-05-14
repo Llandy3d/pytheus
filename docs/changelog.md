@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.0.13
+
 - Support for `_generate_samples` in Backend
 - MultiProcessRedisBackend:
     - Improved scraping performance via pipelining
