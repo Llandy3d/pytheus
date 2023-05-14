@@ -271,3 +271,41 @@ def test_multiple_metrics_with_same_name_labeled_with_redis_key_name_do_not_over
     assert second_collector_metrics_count == 2
     assert counter_a.labels({"bob": "cat"})._metric_value_backend.get() == 0
     assert counter_b.labels({"bob": "cat"})._metric_value_backend.get() == 1
+
+
+@mock.patch("pytheus.backends.redis.pipeline_var")
+def test_initialize_pipeline(pipeline_var_mock):
+    pipeline_var_mock.get.return_value = None
+    MultiProcessRedisBackend._initialize_pipeline()
+    assert pipeline_var_mock.set.called
+    assert pipeline_var_mock.set.call_args[0][0] is not None
+
+
+@mock.patch("pytheus.backends.redis.pipeline_var")
+def test_execute_and_cleanup_pipeline(pipeline_var_mock):
+    pipeline_mock = mock.Mock()
+    pipeline_var_mock.get.return_value = pipeline_mock
+    MultiProcessRedisBackend._execute_and_cleanup_pipeline()
+    assert pipeline_var_mock.set.called
+    assert pipeline_var_mock.set.call_args[0][0] is None
+    assert pipeline_mock.execute.called
+
+
+def test_generate_samples():
+    registry = CollectorRegistry()
+    counter = Counter("name", "desc", registry=registry)
+    histogram = Histogram("histogram", "desc", registry=registry)
+    samples = MultiProcessRedisBackend._generate_samples(registry)
+    assert len(samples[counter._collector]) == 1
+    assert len(samples[histogram._collector]) == 14
+
+
+def test_generate_samples_with_labels():
+    registry = CollectorRegistry()
+    counter = Counter(
+        "name", "desc", required_labels=["bob"], default_labels={"bob": "c"}, registry=registry
+    )
+    counter.labels({"bob": "a"})
+    counter.labels({"bob": "b"})
+    samples = MultiProcessRedisBackend._generate_samples(registry)
+    assert len(samples[counter._collector]) == 3
