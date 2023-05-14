@@ -1,3 +1,5 @@
+from unittest import mock
+
 from pytheus.exposition import _escape_help, format_labels, generate_metrics
 from pytheus.metrics import Counter, Histogram
 from pytheus.registry import REGISTRY, CollectorRegistry
@@ -101,6 +103,11 @@ class TestExposition:
             'http_req_total{bob="slash\\\\quote\\"newline\\n"} 0.0\n'
             ""
         )
+
+    @mock.patch("pytheus.exposition.get_backend_class")
+    def test_generate_metrics_calls_generate_samples(self, get_backend_mock):
+        generate_metrics()
+        assert get_backend_mock()._generate_samples.called
 
     def test_format_labels_escapes_characters(self):
         # \ -> \\
