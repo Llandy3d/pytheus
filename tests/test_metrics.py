@@ -449,6 +449,15 @@ class TestGauge:
         test()
         assert gauge._metric_value_backend.get() != 0
 
+    @pytest.mark.asyncio
+    async def test_as_decorator_async(self, gauge):
+        @gauge
+        async def test():
+            pass
+
+        await test()
+        assert gauge._metric_value_backend.get() != 0
+
     def test_as_decorator_with_track_inprogress(self, gauge):
         backend_mock = mock.Mock()
         gauge._metric_value_backend = backend_mock
@@ -461,12 +470,34 @@ class TestGauge:
         backend_mock.inc.assert_called()
         backend_mock.dec.assert_called()
 
+    @pytest.mark.asyncio
+    async def test_as_decorator_with_track_inprogress_async(self, gauge):
+        backend_mock = mock.Mock()
+        gauge._metric_value_backend = backend_mock
+
+        @gauge(track_inprogress=True)
+        async def test():
+            pass
+
+        await test()
+        backend_mock.inc.assert_called()
+        backend_mock.dec.assert_called()
+
     def test_as_decorator_with_track_inprogress_as_false(self, gauge):
         @gauge(track_inprogress=False)
         def test():
             pass
 
         test()
+        assert gauge._metric_value_backend.get() != 0
+
+    @pytest.mark.asyncio
+    async def test_as_decorator_with_track_inprogress_as_false_async(self, gauge):
+        @gauge(track_inprogress=False)
+        async def test():
+            pass
+
+        await test()
         assert gauge._metric_value_backend.get() != 0
 
 
