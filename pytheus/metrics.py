@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import itertools
 import re
@@ -321,10 +322,19 @@ class Counter(_Metric):
         if func is None:
             return functools.partial(self.__call__, exceptions=exceptions)
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
-            with self.count_exceptions(exceptions):
-                return func(*args, **kwargs)
+        if asyncio.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):  # type: ignore
+                with self.count_exceptions(exceptions):
+                    return await func(*args, **kwargs)
+
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):  # type: ignore
+                with self.count_exceptions(exceptions):
+                    return func(*args, **kwargs)
 
         return wrapper
 
@@ -391,14 +401,27 @@ class Gauge(_Metric):
         if func is None:
             return functools.partial(self.__call__, track_inprogress=track_inprogress)
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
-            if track_inprogress:
-                with self.track_inprogress():
-                    return func(*args, **kwargs)
-            else:
-                with self.time():
-                    return func(*args, **kwargs)
+        if asyncio.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):  # type: ignore
+                if track_inprogress:
+                    with self.track_inprogress():
+                        return await func(*args, **kwargs)
+                else:
+                    with self.time():
+                        return await func(*args, **kwargs)
+
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):  # type: ignore
+                if track_inprogress:
+                    with self.track_inprogress():
+                        return func(*args, **kwargs)
+                else:
+                    with self.time():
+                        return func(*args, **kwargs)
 
         return wrapper
 
@@ -519,11 +542,19 @@ class Histogram(_Metric):
         When called acts as a decorator tracking the time taken by
         the wrapped function.
         """
+        if asyncio.iscoroutinefunction(func):
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
-            with self.time():
-                return func(*args, **kwargs)
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):  # type: ignore
+                with self.time():
+                    return await func(*args, **kwargs)
+
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):  # type: ignore
+                with self.time():
+                    return func(*args, **kwargs)
 
         return wrapper
 

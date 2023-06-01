@@ -337,6 +337,17 @@ class TestCounter:
 
         assert counter._metric_value_backend.get() == 1
 
+    @pytest.mark.asyncio
+    async def test_count_exception_with_decorator_async(self, counter):
+        @counter
+        async def test():
+            raise ValueError
+
+        with pytest.raises(ValueError):
+            await test()
+
+        assert counter._metric_value_backend.get() == 1
+
     def test_count_exception_with_decorator_multiple(self, counter):
         @counter
         def test():
@@ -353,6 +364,23 @@ class TestCounter:
 
         assert counter._metric_value_backend.get() == 2
 
+    @pytest.mark.asyncio
+    async def test_count_exception_with_decorator_multiple_async(self, counter):
+        @counter
+        async def test():
+            raise ValueError
+
+        @counter
+        async def test_2():
+            raise ValueError
+
+        with pytest.raises(ValueError):
+            await test()
+        with pytest.raises(ValueError):
+            await test_2()
+
+        assert counter._metric_value_backend.get() == 2
+
     def test_count_exception_with_specified_as_decorator(self, counter):
         @counter(exceptions=(IndexError, ValueError))
         def test():
@@ -363,6 +391,17 @@ class TestCounter:
 
         assert counter._metric_value_backend.get() == 1
 
+    @pytest.mark.asyncio
+    async def test_count_exception_with_specified_as_decorator_async(self, counter):
+        @counter(exceptions=(IndexError, ValueError))
+        async def test():
+            raise ValueError
+
+        with pytest.raises(ValueError):
+            await test()
+
+        assert counter._metric_value_backend.get() == 1
+
     def test_count_exception_with_specified_is_ignored_as_decorator(self, counter):
         @counter(exceptions=IndexError)
         def test():
@@ -370,6 +409,17 @@ class TestCounter:
 
         with pytest.raises(ValueError):
             test()
+
+        assert counter._metric_value_backend.get() == 0
+
+    @pytest.mark.asyncio
+    async def test_count_exception_with_specified_is_ignored_as_decorator_async(self, counter):
+        @counter(exceptions=IndexError)
+        async def test():
+            raise ValueError
+
+        with pytest.raises(ValueError):
+            await test()
 
         assert counter._metric_value_backend.get() == 0
 
@@ -449,6 +499,15 @@ class TestGauge:
         test()
         assert gauge._metric_value_backend.get() != 0
 
+    @pytest.mark.asyncio
+    async def test_as_decorator_async(self, gauge):
+        @gauge
+        async def test():
+            pass
+
+        await test()
+        assert gauge._metric_value_backend.get() != 0
+
     def test_as_decorator_with_track_inprogress(self, gauge):
         backend_mock = mock.Mock()
         gauge._metric_value_backend = backend_mock
@@ -461,12 +520,34 @@ class TestGauge:
         backend_mock.inc.assert_called()
         backend_mock.dec.assert_called()
 
+    @pytest.mark.asyncio
+    async def test_as_decorator_with_track_inprogress_async(self, gauge):
+        backend_mock = mock.Mock()
+        gauge._metric_value_backend = backend_mock
+
+        @gauge(track_inprogress=True)
+        async def test():
+            pass
+
+        await test()
+        backend_mock.inc.assert_called()
+        backend_mock.dec.assert_called()
+
     def test_as_decorator_with_track_inprogress_as_false(self, gauge):
         @gauge(track_inprogress=False)
         def test():
             pass
 
         test()
+        assert gauge._metric_value_backend.get() != 0
+
+    @pytest.mark.asyncio
+    async def test_as_decorator_with_track_inprogress_as_false_async(self, gauge):
+        @gauge(track_inprogress=False)
+        async def test():
+            pass
+
+        await test()
         assert gauge._metric_value_backend.get() != 0
 
 
@@ -572,7 +653,7 @@ class TestHistogram:
         with histogram.time():
             pass
         assert histogram._count.get() == 1
-        assert histogram._count.get() != 0
+        assert histogram._sum.get() != 0
 
     def test_as_decorator(self, histogram):
         @histogram
@@ -581,7 +662,7 @@ class TestHistogram:
 
         test()
         assert histogram._count.get() == 1
-        assert histogram._count.get() != 0
+        assert histogram._sum.get() != 0
 
     def test_as_decorator_multiple(self, histogram):
         @histogram
@@ -595,7 +676,32 @@ class TestHistogram:
         test()
         test_2()
         assert histogram._count.get() == 2
-        assert histogram._count.get() != 0
+        assert histogram._sum.get() != 0
+
+    @pytest.mark.asyncio
+    async def test_as_decorator_async(self, histogram):
+        @histogram
+        async def test():
+            pass
+
+        await test()
+        assert histogram._count.get() == 1
+        assert histogram._sum.get() != 0
+
+    @pytest.mark.asyncio
+    async def test_as_decorator_multiple_async(self, histogram):
+        @histogram
+        async def test():
+            pass
+
+        @histogram
+        async def test_2():
+            pass
+
+        await test()
+        await test_2()
+        assert histogram._count.get() == 2
+        assert histogram._sum.get() != 0
 
 
 class _TestCollector(CustomCollector):
