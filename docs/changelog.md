@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.0.14
+
 - decorator support for async functions
 
 ## 0.0.13
