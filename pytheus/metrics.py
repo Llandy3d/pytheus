@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import itertools
 import re
@@ -519,11 +520,19 @@ class Histogram(_Metric):
         When called acts as a decorator tracking the time taken by
         the wrapped function.
         """
+        if asyncio.iscoroutinefunction(func):
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
-            with self.time():
-                return func(*args, **kwargs)
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):  # type: ignore
+                with self.time():
+                    return await func(*args, **kwargs)
+
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):  # type: ignore
+                with self.time():
+                    return func(*args, **kwargs)
 
         return wrapper
 
