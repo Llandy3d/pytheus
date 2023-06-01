@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- decorator support for async functions
+
 ## 0.0.13
 
 - Support for `_generate_samples` in Backend
