@@ -572,7 +572,7 @@ class TestHistogram:
         with histogram.time():
             pass
         assert histogram._count.get() == 1
-        assert histogram._count.get() != 0
+        assert histogram._sum.get() != 0
 
     def test_as_decorator(self, histogram):
         @histogram
@@ -581,7 +581,7 @@ class TestHistogram:
 
         test()
         assert histogram._count.get() == 1
-        assert histogram._count.get() != 0
+        assert histogram._sum.get() != 0
 
     def test_as_decorator_multiple(self, histogram):
         @histogram
@@ -595,7 +595,7 @@ class TestHistogram:
         test()
         test_2()
         assert histogram._count.get() == 2
-        assert histogram._count.get() != 0
+        assert histogram._sum.get() != 0
 
     @pytest.mark.asyncio
     async def test_as_decorator_async(self, histogram):
@@ -605,7 +605,7 @@ class TestHistogram:
 
         await test()
         assert histogram._count.get() == 1
-        assert histogram._count.get() != 0
+        assert histogram._sum.get() != 0
 
     @pytest.mark.asyncio
     async def test_as_decorator_multiple_async(self, histogram):
@@ -620,7 +620,7 @@ class TestHistogram:
         await test()
         await test_2()
         assert histogram._count.get() == 2
-        assert histogram._count.get() != 0
+        assert histogram._sum.get() != 0
 
 
 class _TestCollector(CustomCollector):
