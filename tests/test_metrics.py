@@ -337,6 +337,17 @@ class TestCounter:
 
         assert counter._metric_value_backend.get() == 1
 
+    @pytest.mark.asyncio
+    async def test_count_exception_with_decorator_async(self, counter):
+        @counter
+        async def test():
+            raise ValueError
+
+        with pytest.raises(ValueError):
+            await test()
+
+        assert counter._metric_value_backend.get() == 1
+
     def test_count_exception_with_decorator_multiple(self, counter):
         @counter
         def test():
@@ -353,6 +364,23 @@ class TestCounter:
 
         assert counter._metric_value_backend.get() == 2
 
+    @pytest.mark.asyncio
+    async def test_count_exception_with_decorator_multiple_async(self, counter):
+        @counter
+        async def test():
+            raise ValueError
+
+        @counter
+        async def test_2():
+            raise ValueError
+
+        with pytest.raises(ValueError):
+            await test()
+        with pytest.raises(ValueError):
+            await test_2()
+
+        assert counter._metric_value_backend.get() == 2
+
     def test_count_exception_with_specified_as_decorator(self, counter):
         @counter(exceptions=(IndexError, ValueError))
         def test():
@@ -363,6 +391,17 @@ class TestCounter:
 
         assert counter._metric_value_backend.get() == 1
 
+    @pytest.mark.asyncio
+    async def test_count_exception_with_specified_as_decorator_async(self, counter):
+        @counter(exceptions=(IndexError, ValueError))
+        async def test():
+            raise ValueError
+
+        with pytest.raises(ValueError):
+            await test()
+
+        assert counter._metric_value_backend.get() == 1
+
     def test_count_exception_with_specified_is_ignored_as_decorator(self, counter):
         @counter(exceptions=IndexError)
         def test():
@@ -370,6 +409,17 @@ class TestCounter:
 
         with pytest.raises(ValueError):
             test()
+
+        assert counter._metric_value_backend.get() == 0
+
+    @pytest.mark.asyncio
+    async def test_count_exception_with_specified_is_ignored_as_decorator_async(self, counter):
+        @counter(exceptions=IndexError)
+        async def test():
+            raise ValueError
+
+        with pytest.raises(ValueError):
+            await test()
 
         assert counter._metric_value_backend.get() == 0
 

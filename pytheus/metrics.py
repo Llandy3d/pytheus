@@ -322,10 +322,19 @@ class Counter(_Metric):
         if func is None:
             return functools.partial(self.__call__, exceptions=exceptions)
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
-            with self.count_exceptions(exceptions):
-                return func(*args, **kwargs)
+        if asyncio.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):  # type: ignore
+                with self.count_exceptions(exceptions):
+                    return await func(*args, **kwargs)
+
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):  # type: ignore
+                with self.count_exceptions(exceptions):
+                    return func(*args, **kwargs)
 
         return wrapper
 
