@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 from pytheus.backends.base import get_backend_class
 from pytheus.metrics import Labels, Sample
@@ -62,7 +62,7 @@ def format_labels(labels: Optional[Labels]) -> str:
 
 
 def generate_from_collector(
-    collector: Collector, prefix: Optional[str] = None, samples: Optional[list[Sample]] = None
+    collector: Collector, prefix: Optional[str] = None, samples: Optional[List[Sample]] = None
 ) -> str:
     """
     Returns the metrics from a given collector in prometheus text format

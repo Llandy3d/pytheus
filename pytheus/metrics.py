@@ -3,10 +3,9 @@ import functools
 import itertools
 import re
 import time
-from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Callable, Iterable, Optional, Sequence, Union
+from typing import Callable, Dict, Generator, Iterable, Optional, Sequence, Tuple, Type, Union
 
 from pytheus.backends import get_backend
 from pytheus.exceptions import (
@@ -17,7 +16,7 @@ from pytheus.exceptions import (
 from pytheus.registry import REGISTRY, Collector, Registry
 from pytheus.utils import InfFloat, MetricType
 
-Labels = dict[str, str]
+Labels = Dict[str, str]
 
 
 metric_name_re = re.compile(r"[a-zA-Z_:][a-zA-Z0-9_:]*")
@@ -27,7 +26,7 @@ label_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*")
 @dataclass
 class Sample:
     suffix: str
-    labels: Optional[dict[str, str]]
+    labels: Optional[Dict[str, str]]
     value: float
 
 
@@ -86,7 +85,7 @@ class _MetricCollector:
         self._default_labels = default_labels
         self._default_labels_count = len(default_labels) if default_labels else 0
         self._metric = metric
-        self._labeled_metrics: dict[tuple[str, ...], _Metric] = {}
+        self._labeled_metrics: Dict[Tuple[str, ...], _Metric] = {}
         self._registry = registry
 
         if registry:
@@ -295,7 +294,7 @@ class Counter(_Metric):
 
     @contextmanager
     def count_exceptions(
-        self, exceptions: Union[type[Exception], tuple[Exception], None] = None
+        self, exceptions: Union[Type[Exception], Tuple[Exception], None] = None
     ) -> Generator[None, None, None]:
         """
         Will count and reraise raised exceptions.
@@ -314,7 +313,7 @@ class Counter(_Metric):
     def __call__(
         self,
         func: Optional[Callable] = None,
-        exceptions: Union[type[Exception], tuple[Exception], None] = None,
+        exceptions: Union[Type[Exception], Tuple[Exception], None] = None,
     ) -> Callable:
         """
         When called acts as a decorator counting exceptions raised.

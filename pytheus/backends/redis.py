@@ -1,5 +1,5 @@
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import redis
 
@@ -94,20 +94,20 @@ class MultiProcessRedisBackend:
         pipeline_var.set(pipeline)
 
     @staticmethod
-    def _execute_and_cleanup_pipeline() -> list[Optional[Union[float, bool]]]:
+    def _execute_and_cleanup_pipeline() -> List[Optional[Union[float, bool]]]:
         pipeline = pipeline_var.get()
         assert pipeline is not None
         pipeline_var.set(None)
         return pipeline.execute()
 
     @classmethod
-    def _generate_samples(cls, registry: "Registry") -> dict["Collector", list["Sample"]]:
+    def _generate_samples(cls, registry: "Registry") -> Dict["Collector", List["Sample"]]:
         cls._initialize_pipeline()
 
         # collect samples that are not yet stored with the value
         samples_dict = {}
         for collector in registry.collect():
-            samples_list: list[Sample] = []
+            samples_list: List[Sample] = []
             samples_dict[collector] = samples_list
             # collecting also builds requests in the pipeline
             for sample in collector.collect():
