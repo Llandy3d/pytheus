@@ -43,7 +43,7 @@ Be extremely flexible, allow for customization from the user for anything they m
 ---
 ## Requirements
 
-- Python 3.10+
+- Python 3.8+
 - redis >= 4.0.0 (**optional**: for multiprocessing)
 
 ---
