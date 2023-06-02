@@ -1,5 +1,5 @@
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 import redis
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 EXPIRE_KEY_TIME = 3600  # 1 hour
 
 
-pipeline_var: ContextVar[redis.client.Pipeline | None] = ContextVar("pipeline", default=None)
+pipeline_var: ContextVar[Optional[redis.client.Pipeline]] = ContextVar("pipeline", default=None)
 
 
 class MultiProcessRedisBackend:
@@ -94,7 +94,7 @@ class MultiProcessRedisBackend:
         pipeline_var.set(pipeline)
 
     @staticmethod
-    def _execute_and_cleanup_pipeline() -> list[float | bool | None]:
+    def _execute_and_cleanup_pipeline() -> list[Optional[Union[float, bool]]]:
         pipeline = pipeline_var.get()
         assert pipeline is not None
         pipeline_var.set(None)
