@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- add support for python `3.8` & `3.9`
+
 ## 0.0.14
 
 - decorator support for async functions
