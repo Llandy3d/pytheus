@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.0.15
+
 - add support for python `3.8` & `3.9`
 
 ## 0.0.14
