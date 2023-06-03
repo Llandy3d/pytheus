@@ -3,10 +3,9 @@ import functools
 import itertools
 import re
 import time
-from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Callable, Iterable, Sequence
+from typing import Callable, Dict, Generator, Iterable, Optional, Sequence, Tuple, Type, Union
 
 from pytheus.backends import get_backend
 from pytheus.exceptions import (
@@ -17,7 +16,7 @@ from pytheus.exceptions import (
 from pytheus.registry import REGISTRY, Collector, Registry
 from pytheus.utils import InfFloat, MetricType
 
-Labels = dict[str, str]
+Labels = Dict[str, str]
 
 
 metric_name_re = re.compile(r"[a-zA-Z_:][a-zA-Z0-9_:]*")
@@ -27,7 +26,7 @@ label_name_re = re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*")
 @dataclass
 class Sample:
     suffix: str
-    labels: dict[str, str] | None
+    labels: Optional[Dict[str, str]]
     value: float
 
 
@@ -64,9 +63,9 @@ class _MetricCollector:
         name: str,
         description: str,
         metric: "_Metric",
-        required_labels: Sequence[str] | None = None,
-        default_labels: Labels | None = None,
-        registry: Registry | None = REGISTRY,
+        required_labels: Optional[Sequence[str]] = None,
+        default_labels: Optional[Labels] = None,
+        registry: Optional[Registry] = REGISTRY,
     ) -> None:
         if metric_name_re.fullmatch(name) is None:
             raise ValueError(f"Invalid metric name: {name}")
@@ -86,7 +85,7 @@ class _MetricCollector:
         self._default_labels = default_labels
         self._default_labels_count = len(default_labels) if default_labels else 0
         self._metric = metric
-        self._labeled_metrics: dict[tuple[str, ...], _Metric] = {}
+        self._labeled_metrics: Dict[Tuple[str, ...], _Metric] = {}
         self._registry = registry
 
         if registry:
@@ -142,11 +141,11 @@ class _Metric:
         self,
         name: str,
         description: str,
-        required_labels: Sequence[str] | None = None,
-        labels: Labels | None = None,
-        default_labels: Labels | None = None,
-        registry: Registry | None = REGISTRY,
-        collector: _MetricCollector | None = None,
+        required_labels: Optional[Sequence[str]] = None,
+        labels: Optional[Labels] = None,
+        default_labels: Optional[Labels] = None,
+        registry: Optional[Registry] = REGISTRY,
+        collector: Optional[_MetricCollector] = None,
     ) -> None:
         self.name = name
         self.description = description
@@ -295,7 +294,7 @@ class Counter(_Metric):
 
     @contextmanager
     def count_exceptions(
-        self, exceptions: type[Exception] | tuple[Exception] | None = None
+        self, exceptions: Union[Type[Exception], Tuple[Exception], None] = None
     ) -> Generator[None, None, None]:
         """
         Will count and reraise raised exceptions.
@@ -313,8 +312,8 @@ class Counter(_Metric):
 
     def __call__(
         self,
-        func: Callable | None = None,
-        exceptions: type[Exception] | tuple[Exception] | None = None,
+        func: Optional[Callable] = None,
+        exceptions: Union[Type[Exception], Tuple[Exception], None] = None,
     ) -> Callable:
         """
         When called acts as a decorator counting exceptions raised.
@@ -390,7 +389,7 @@ class Gauge(_Metric):
         yield
         self.dec()
 
-    def __call__(self, func: Callable | None = None, track_inprogress: bool = False) -> Callable:
+    def __call__(self, func: Optional[Callable] = None, track_inprogress: bool = False) -> Callable:
         """
         When called acts as a decorator tracking the time taken by
         the wrapped function.
@@ -453,11 +452,11 @@ class Histogram(_Metric):
         self,
         name: str,
         description: str,
-        required_labels: Sequence[str] | None = None,
-        labels: Labels | None = None,
-        default_labels: Labels | None = None,
-        registry: Registry | None = REGISTRY,
-        collector: _MetricCollector | None = None,
+        required_labels: Optional[Sequence[str]] = None,
+        labels: Optional[Labels] = None,
+        default_labels: Optional[Labels] = None,
+        registry: Optional[Registry] = REGISTRY,
+        collector: Optional[_MetricCollector] = None,
         buckets: Sequence[float] = DEFAULT_BUCKETS,
     ) -> None:
         super().__init__(

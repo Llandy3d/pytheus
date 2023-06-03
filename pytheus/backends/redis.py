@@ -1,5 +1,5 @@
 from contextvars import ContextVar
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import redis
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 EXPIRE_KEY_TIME = 3600  # 1 hour
 
 
-pipeline_var: ContextVar[redis.client.Pipeline | None] = ContextVar("pipeline", default=None)
+pipeline_var: ContextVar[Optional[redis.client.Pipeline]] = ContextVar("pipeline", default=None)
 
 
 class MultiProcessRedisBackend:
@@ -24,13 +24,13 @@ class MultiProcessRedisBackend:
     (ex. maybe store all dimensions in the same hash and be smart on retrieving everything...)
     """
 
-    CONNECTION_POOL: redis.Redis | None = None
+    CONNECTION_POOL: Optional[redis.Redis] = None
 
     def __init__(
         self,
         config: "BackendConfig",
         metric: "_Metric",
-        histogram_bucket: str | None = None,
+        histogram_bucket: Optional[str] = None,
     ) -> None:
         self._key_name = metric._collector.name
         self._labels_hash = None
@@ -94,20 +94,20 @@ class MultiProcessRedisBackend:
         pipeline_var.set(pipeline)
 
     @staticmethod
-    def _execute_and_cleanup_pipeline() -> list[float | bool | None]:
+    def _execute_and_cleanup_pipeline() -> List[Optional[Union[float, bool]]]:
         pipeline = pipeline_var.get()
         assert pipeline is not None
         pipeline_var.set(None)
         return pipeline.execute()
 
     @classmethod
-    def _generate_samples(cls, registry: "Registry") -> dict["Collector", list["Sample"]]:
+    def _generate_samples(cls, registry: "Registry") -> Dict["Collector", List["Sample"]]:
         cls._initialize_pipeline()
 
         # collect samples that are not yet stored with the value
         samples_dict = {}
         for collector in registry.collect():
-            samples_list: list[Sample] = []
+            samples_list: List[Sample] = []
             samples_dict[collector] = samples_list
             # collecting also builds requests in the pipeline
             for sample in collector.collect():

@@ -1,5 +1,5 @@
 import os
-from typing import Callable
+from typing import Callable, List, Optional
 
 from pytheus.backends.base import get_backend_class
 from pytheus.metrics import Labels, Sample
@@ -54,7 +54,7 @@ def _escape_help(value: str) -> str:
     return value
 
 
-def format_labels(labels: Labels | None) -> str:
+def format_labels(labels: Optional[Labels]) -> str:
     if not labels:
         return ""
     label_str = (f'{name}="{_escape_value(value)}"' for name, value in labels.items())
@@ -62,7 +62,7 @@ def format_labels(labels: Labels | None) -> str:
 
 
 def generate_from_collector(
-    collector: Collector, prefix: str | None = None, samples: list[Sample] | None = None
+    collector: Collector, prefix: Optional[str] = None, samples: Optional[List[Sample]] = None
 ) -> str:
     """
     Returns the metrics from a given collector in prometheus text format

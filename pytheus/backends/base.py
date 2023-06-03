@@ -2,7 +2,7 @@ import importlib
 import json
 import os
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Dict, Optional, Protocol, Type, runtime_checkable
 
 from pytheus.exceptions import InvalidBackendClassException, InvalidBackendConfigException
 
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pytheus.metrics import _Metric
 
 
-BackendConfig = dict[str, Any]
+BackendConfig = Dict[str, Any]
 
 
 @runtime_checkable
@@ -25,7 +25,7 @@ class Backend(Protocol):
         self,
         config: BackendConfig,
         metric: "_Metric",
-        histogram_bucket: str | None = None,
+        histogram_bucket: Optional[str] = None,
     ) -> None:
         ...
 
@@ -42,7 +42,7 @@ class Backend(Protocol):
         ...
 
 
-def _import_backend_class(full_import_path: str) -> type[Backend]:
+def _import_backend_class(full_import_path: str) -> Type[Backend]:
     try:
         module_path, class_name = full_import_path.rsplit(".", 1)
     except ValueError:  # Empty string or not full path to the class
@@ -55,7 +55,7 @@ def _import_backend_class(full_import_path: str) -> type[Backend]:
     except ImportError as e:
         raise InvalidBackendClassException(f"Module '{module_path}' could not be imported: {e}")
     try:
-        cls: type[Backend] = getattr(module, class_name)
+        cls: Type[Backend] = getattr(module, class_name)
         if not issubclass(cls, Backend):
             raise InvalidBackendClassException(f"Class '{class_name}' is not a Backend subclass")
         return cls
@@ -66,8 +66,8 @@ def _import_backend_class(full_import_path: str) -> type[Backend]:
 
 
 def load_backend(
-    backend_class: type[Backend] | None = None,
-    backend_config: BackendConfig | None = None,
+    backend_class: Optional[Type[Backend]] = None,
+    backend_config: Optional[BackendConfig] = None,
 ) -> None:
     # Load default backend class
     global BACKEND_CLASS
@@ -98,12 +98,12 @@ def load_backend(
         BACKEND_CLASS._initialize(BACKEND_CONFIG)
 
 
-def get_backend(metric: "_Metric", histogram_bucket: str | None = None) -> Backend:
+def get_backend(metric: "_Metric", histogram_bucket: Optional[str] = None) -> Backend:
     # Probably ok not to cache this and allow each metric to keep its own
     return BACKEND_CLASS(BACKEND_CONFIG, metric, histogram_bucket=histogram_bucket)
 
 
-def get_backend_class() -> type[Backend]:
+def get_backend_class() -> Type[Backend]:
     return BACKEND_CLASS
 
 
@@ -114,7 +114,7 @@ class SingleProcessBackend:
         self,
         config: BackendConfig,
         metric: "_Metric",
-        histogram_bucket: str | None = None,
+        histogram_bucket: Optional[str] = None,
     ) -> None:
         self._value = 0.0
         self._lock = Lock()
@@ -136,5 +136,5 @@ class SingleProcessBackend:
             return self._value
 
 
-BACKEND_CLASS: type[Backend]
+BACKEND_CLASS: Type[Backend]
 BACKEND_CONFIG: BackendConfig

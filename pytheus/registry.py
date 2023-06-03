@@ -1,6 +1,6 @@
 from logging import getLogger
 from threading import Lock
-from typing import Iterable, Protocol
+from typing import Dict, Iterable, Optional, Protocol
 
 from pytheus.utils import MetricType
 
@@ -17,7 +17,7 @@ class Collector(Protocol):
 
 
 class Registry(Protocol):
-    prefix: str | None
+    prefix: Optional[str]
 
     def register(self, collector: Collector) -> None:
         ...
@@ -30,10 +30,10 @@ class Registry(Protocol):
 
 
 class CollectorRegistry:
-    def __init__(self, prefix: str | None = None) -> None:
+    def __init__(self, prefix: Optional[str] = None) -> None:
         self._lock = Lock()
         self.prefix = prefix
-        self._collectors: dict[str, Collector] = {}
+        self._collectors: Dict[str, Collector] = {}
 
     def register(self, collector: Collector) -> None:
         with self._lock:
@@ -73,7 +73,7 @@ class CollectorRegistry:
 
 
 class CollectorRegistryProxy:
-    def __init__(self, registry: Registry | None = None) -> None:
+    def __init__(self, registry: Optional[Registry] = None) -> None:
         self._registry = registry or CollectorRegistry()
         self.prefix = self._registry.prefix
 
