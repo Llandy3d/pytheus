@@ -54,7 +54,7 @@ class TestMetricCollector:
     def test_validate_required_labels_with_correct_values(self):
         labels = ["action", "method", "_type"]
         collector = _MetricCollector("name", "desc", _Metric)
-        collector._validate_required_labels(labels)
+        collector._validate_required_labels(labels, MetricType.COUNTER)
 
     @pytest.mark.parametrize(
         "label",
@@ -67,7 +67,7 @@ class TestMetricCollector:
     def test_validate_required_labels_with_incorrect_values(self, label):
         collector = _MetricCollector("name", "desc", _Metric)
         with pytest.raises(LabelValidationException):
-            collector._validate_required_labels([label])
+            collector._validate_required_labels([label], MetricType.COUNTER)
 
     def test_collect_without_labels(self):
         counter = Counter("name", "desc")

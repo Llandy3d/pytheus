@@ -71,8 +71,7 @@ class _MetricCollector:
             raise ValueError(f"Invalid metric name: {name}")
 
         if required_labels:
-            is_histogram = isinstance(metric, Histogram)
-            self._validate_required_labels(required_labels, is_histogram)
+            self._validate_required_labels(required_labels, metric.type_)
 
         self._required_labels = set(required_labels) if required_labels else None
 
@@ -91,7 +90,7 @@ class _MetricCollector:
         if registry:
             registry.register(self)
 
-    def _validate_required_labels(self, labels: Sequence[str], is_histogram: bool = False) -> None:
+    def _validate_required_labels(self, labels: Sequence[str], metric_type: MetricType) -> None:
         """
         Validates label names according to the regex.
         Labels starting with `__` are reserved for internal use by Prometheus.
@@ -99,8 +98,10 @@ class _MetricCollector:
         for label in labels:
             if label.startswith("__") or label_name_re.fullmatch(label) is None:
                 raise LabelValidationException(f"Invalid label name: {label}")
-            if is_histogram and label == "le":
+            if metric_type == MetricType.HISTOGRAM and label == "le":
                 raise LabelValidationException(f"Invalid label name for Histogram: {label}")
+            elif metric_type == MetricType.SUMMARY and label == "quantile":
+                raise LabelValidationException(f"Invalid label name for Summary: {label}")
 
     def _validate_labels(self, labels: Labels) -> None:
         """
@@ -572,6 +573,10 @@ class Histogram(_Metric):
         samples.append(Sample("_count", self._labels, self._count.get()))
 
         return (self._add_default_labels_to_sample(sample) for sample in samples)
+
+
+class Summary(_Metric):
+    type_: MetricType = MetricType.SUMMARY
 
 
 # maybe just go with the typing alias
