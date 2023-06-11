@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- add `Summary` metric type
+
 ## 0.0.15
 
 - add support for python `3.8` & `3.9`

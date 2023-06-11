@@ -38,6 +38,7 @@ nav:
     - Counter: counter.md
     - Gauge: gauge.md
     - Histogram: histogram.md
+    - Summary: summary.md
     - Registry: registry.md
     - Backend / Multiprocessing: backend.md
     - Custom Collector: custom_collector.md

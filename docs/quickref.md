@@ -127,3 +127,23 @@ with histogram.time():
 def do_something():
     ...
 ```
+
+## Summary
+
+```python
+from pytheus.metrics import Summary
+
+summary = Summary(name="my_summary", description="My description")
+
+# observe a value
+summary.observe(0.4)
+
+# you can also time a piece of code, will set the duration in seconds to value when exited
+with summary.time():
+    do_something()
+
+# tracking time can also be done as a decorator
+@summary
+def do_something():
+    ...
+```

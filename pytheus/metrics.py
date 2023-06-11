@@ -71,8 +71,7 @@ class _MetricCollector:
             raise ValueError(f"Invalid metric name: {name}")
 
         if required_labels:
-            is_histogram = isinstance(metric, Histogram)
-            self._validate_required_labels(required_labels, is_histogram)
+            self._validate_required_labels(required_labels, metric.type_)
 
         self._required_labels = set(required_labels) if required_labels else None
 
@@ -91,7 +90,7 @@ class _MetricCollector:
         if registry:
             registry.register(self)
 
-    def _validate_required_labels(self, labels: Sequence[str], is_histogram: bool = False) -> None:
+    def _validate_required_labels(self, labels: Sequence[str], metric_type: MetricType) -> None:
         """
         Validates label names according to the regex.
         Labels starting with `__` are reserved for internal use by Prometheus.
@@ -99,8 +98,10 @@ class _MetricCollector:
         for label in labels:
             if label.startswith("__") or label_name_re.fullmatch(label) is None:
                 raise LabelValidationException(f"Invalid label name: {label}")
-            if is_histogram and label == "le":
+            if metric_type == MetricType.HISTOGRAM and label == "le":
                 raise LabelValidationException(f"Invalid label name for Histogram: {label}")
+            elif metric_type == MetricType.SUMMARY and label == "quantile":
+                raise LabelValidationException(f"Invalid label name for Summary: {label}")
 
     def _validate_labels(self, labels: Labels) -> None:
         """
@@ -167,7 +168,7 @@ class _Metric:
                 "You might be looking for default_labels."
             )
 
-        if self._can_observe and not isinstance(self, Histogram):
+        if self._can_observe and self.type_ not in [MetricType.HISTOGRAM, MetricType.SUMMARY]:
             self._metric_value_backend = get_backend(self)
 
     def _check_can_observe(self) -> bool:
@@ -566,6 +567,89 @@ class Histogram(_Metric):
             sample = Sample("_bucket", bucket_labels, self._buckets[i].get())
             samples.append(sample)
 
+        assert self._sum is not None
+        assert self._count is not None
+        samples.append(Sample("_sum", self._labels, self._sum.get()))
+        samples.append(Sample("_count", self._labels, self._count.get()))
+
+        return (self._add_default_labels_to_sample(sample) for sample in samples)
+
+
+class Summary(_Metric):
+    type_: MetricType = MetricType.SUMMARY
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        required_labels: Optional[Sequence[str]] = None,
+        labels: Optional[Labels] = None,
+        default_labels: Optional[Labels] = None,
+        registry: Optional[Registry] = REGISTRY,
+        collector: Optional[_MetricCollector] = None,
+    ) -> None:
+        super().__init__(
+            name,
+            description,
+            required_labels,
+            labels,
+            default_labels,
+            registry,
+            collector,
+        )
+
+        self._sum = None
+        self._count = None
+        if self._can_observe:
+            # as always `histogram_bucket` might not be the best name for it
+            self._sum = get_backend(self, histogram_bucket="sum")
+            self._count = get_backend(self, histogram_bucket="count")
+
+    def observe(self, value: float) -> None:
+        """
+        Observe the given value.
+        Value can be negative, in that case prometheus might not detect counter resets.
+        """
+        self._raise_if_cannot_observe()
+        assert self._sum is not None
+        assert self._count is not None
+        self._sum.inc(value)
+        self._count.inc(1)
+
+    @contextmanager
+    def time(self) -> Generator[None, None, None]:
+        """
+        Times the duration inside of it and sets the value.
+        """
+        self._raise_if_cannot_observe()
+        start = time.perf_counter()
+        yield
+        self.observe(time.perf_counter() - start)
+
+    def __call__(self, func: Callable) -> Callable:
+        """
+        When called acts as a decorator tracking the time taken by
+        the wrapped function.
+        """
+        if asyncio.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):  # type: ignore
+                with self.time():
+                    return await func(*args, **kwargs)
+
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):  # type: ignore
+                with self.time():
+                    return func(*args, **kwargs)
+
+        return wrapper
+
+    def collect(self) -> Iterable[Sample]:
+        self._raise_if_cannot_observe()
+        samples = []
         assert self._sum is not None
         assert self._count is not None
         samples.append(Sample("_sum", self._labels, self._sum.get()))
