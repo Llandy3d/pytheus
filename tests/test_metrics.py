@@ -8,7 +8,15 @@ from pytheus.exceptions import (
     LabelValidationException,
     UnobservableMetricException,
 )
-from pytheus.metrics import Counter, CustomCollector, Gauge, Histogram, _Metric, _MetricCollector
+from pytheus.metrics import (
+    Counter,
+    CustomCollector,
+    Gauge,
+    Histogram,
+    Summary,
+    _Metric,
+    _MetricCollector,
+)
 from pytheus.registry import REGISTRY, CollectorRegistry
 from pytheus.utils import InfFloat, MetricType
 
@@ -702,6 +710,109 @@ class TestHistogram:
         await test_2()
         assert histogram._count.get() == 2
         assert histogram._sum.get() != 0
+
+
+class TestSummary:
+    @pytest.fixture
+    def summary(self):
+        return Summary("name", "desc")
+
+    def test_metric_type(self, summary):
+        assert summary.type_ == MetricType.SUMMARY
+
+    def test_create_summary_with_default_labels(self):
+        Summary("name", "desc", required_labels=["bob", "cat"])
+
+    def test_summary_fails_with_quantile_label(self):
+        with pytest.raises(LabelValidationException):
+            Summary("name", "desc", required_labels=["bob", "quantile"])
+
+    def test_does_not_have_metric_value_backend(self, summary):
+        assert summary._metric_value_backend is None
+
+    def test_unobservable_does_not_create_buckets(self):
+        summary = Summary("name", "desc", required_labels=["bob"])
+        assert summary._sum is None
+        assert summary._count is None
+
+    def test_observable_creates_buckets(self):
+        summary = Summary("name", "desc", required_labels=["bob"])
+        summary = summary.labels({"bob": "cat"})
+        assert summary._sum is not None
+        assert summary._count is not None
+
+    def test_collect(self):
+        summary = Summary("name", "desc")
+        samples = summary.collect()
+        samples = list(samples)
+
+        assert len(samples) == 2
+
+    def test_osberve_unobservable_raises(self):
+        summary = Summary("name", "desc", required_labels=["bob"])
+        with pytest.raises(UnobservableMetricException):
+            summary.observe(2)
+
+    def test_observe(self):
+        summary = Summary("name", "desc")
+        summary.observe(0.4)
+
+        assert summary._sum.get() == 0.4
+        assert summary._count.get() == 1
+
+    def test_time(self, summary):
+        with summary.time():
+            pass
+        assert summary._count.get() == 1
+        assert summary._sum.get() != 0
+
+    def test_as_decorator(self, summary):
+        @summary
+        def test():
+            pass
+
+        test()
+        assert summary._count.get() == 1
+        assert summary._sum.get() != 0
+
+    def test_as_decorator_multiple(self, summary):
+        @summary
+        def test():
+            pass
+
+        @summary
+        def test_2():
+            pass
+
+        test()
+        test_2()
+        assert summary._count.get() == 2
+        assert summary._sum.get() != 0
+
+    @pytest.mark.asyncio
+    async def test_as_decorator_async(self, summary):
+        @summary
+        async def test():
+            pass
+
+        await test()
+        assert summary._count.get() == 1
+        assert summary._sum.get() != 0
+
+    @pytest.mark.asyncio
+    async def test_as_decorator_multiple_async(self, summary):
+        @summary
+        async def test():
+            pass
+
+        @summary
+        async def test_2():
+            pass
+
+        await test()
+        await test_2()
+        assert summary._count.get() == 2
+        assert summary._sum.get() != 0
 
 
 class _TestCollector(CustomCollector):

@@ -168,7 +168,7 @@ class _Metric:
                 "You might be looking for default_labels."
             )
 
-        if self._can_observe and not isinstance(self, Histogram):
+        if self._can_observe and self.type_ not in [MetricType.HISTOGRAM, MetricType.SUMMARY]:
             self._metric_value_backend = get_backend(self)
 
     def _check_can_observe(self) -> bool:
@@ -577,6 +577,85 @@ class Histogram(_Metric):
 
 class Summary(_Metric):
     type_: MetricType = MetricType.SUMMARY
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        required_labels: Optional[Sequence[str]] = None,
+        labels: Optional[Labels] = None,
+        default_labels: Optional[Labels] = None,
+        registry: Optional[Registry] = REGISTRY,
+        collector: Optional[_MetricCollector] = None,
+    ) -> None:
+        super().__init__(
+            name,
+            description,
+            required_labels,
+            labels,
+            default_labels,
+            registry,
+            collector,
+        )
+
+        self._sum = None
+        self._count = None
+        if self._can_observe:
+            # as always `histogram_bucket` might not be the best name for it
+            self._sum = get_backend(self, histogram_bucket="sum")
+            self._count = get_backend(self, histogram_bucket="count")
+
+    def observe(self, value: float) -> None:
+        """
+        Observe the given value.
+        Value can be negative, in that case prometheus might not detect counter resets.
+        """
+        self._raise_if_cannot_observe()
+        assert self._sum is not None
+        assert self._count is not None
+        self._sum.inc(value)
+        self._count.inc(1)
+
+    @contextmanager
+    def time(self) -> Generator[None, None, None]:
+        """
+        Times the duration inside of it and sets the value.
+        """
+        self._raise_if_cannot_observe()
+        start = time.perf_counter()
+        yield
+        self.observe(time.perf_counter() - start)
+
+    def __call__(self, func: Callable) -> Callable:
+        """
+        When called acts as a decorator tracking the time taken by
+        the wrapped function.
+        """
+        if asyncio.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):  # type: ignore
+                with self.time():
+                    return await func(*args, **kwargs)
+
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):  # type: ignore
+                with self.time():
+                    return func(*args, **kwargs)
+
+        return wrapper
+
+    def collect(self) -> Iterable[Sample]:
+        self._raise_if_cannot_observe()
+        samples = []
+        assert self._sum is not None
+        assert self._count is not None
+        samples.append(Sample("_sum", self._labels, self._sum.get()))
+        samples.append(Sample("_count", self._labels, self._count.get()))
+
+        return (self._add_default_labels_to_sample(sample) for sample in samples)
 
 
 # maybe just go with the typing alias
