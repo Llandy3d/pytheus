@@ -282,6 +282,28 @@ def do_something():
     ...
 ```
 
+## Summary
+
+A Summary is a metric that captures individual observations and tracks the total size & number of events observed. It can be useful to track latencies for example.
+
+```python
+from pytheus.metrics import Summary
+
+summary = Summary(name="my_summary", description="My description")
+
+# observe a value
+summary.observe(0.4)
+
+# you can also time a piece of code, will set the duration in seconds to value when exited
+with summary.time():
+    do_something()
+
+# tracking time can also be done as a decorator
+@summary
+def do_something():
+    ...
+```
+
 ## Custom Collectors
 
 It is possible to use a custom collector in cases you can't directly instrument the code.
