@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.0.16
+
 - add `Summary` metric type
 
 ## 0.0.15
