@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- asgi middleware for `FastAPI` support
+
 ## 0.0.16
 
 - add `Summary` metric type
