@@ -209,7 +209,6 @@ class _Metric:
         it's not observable will just return the new child instance. Otherwise it will also add
         the instance to the labeled_metrics on the collector.
         """
-        # if not labels_ or self._collector._required_labels is None:
         if not labels_:
             return self
 
