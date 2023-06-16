@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.0
+
 - asgi middleware for `FastAPI` support
 
 ## 0.0.16
