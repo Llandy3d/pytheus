@@ -23,6 +23,7 @@ Some of the features are:
 
   - multiple multiprocess support:
     - redis backend ✅
+    - Rust powered backend 🧪
     - bring your own ✅
   - support for default labels value ✅
   - partial labels value (built in an incremental way) ✅
@@ -45,6 +46,8 @@ Be extremely flexible, allow for customization from the user for anything they m
 
 - Python 3.8+
 - redis >= 4.0.0 (**optional**: for multiprocessing)
+- pytheus-backend-rs (**optional**: for Rust powered multiprocessing 🦀)
+
 
 ---
 
@@ -65,6 +68,11 @@ Optionally if you want to use the Redis backend (for multiprocess support) you w
 pip install redis
 # or
 pip install pytheus[redis]
+```
+
+If you want to try the Rust based backend (for multiprocess support):
+```python
+pip install pytheus-backend-rs
 ```
 
 ---

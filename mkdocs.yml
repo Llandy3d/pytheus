@@ -41,6 +41,7 @@ nav:
     - Summary: summary.md
     - Registry: registry.md
     - Backend / Multiprocessing: backend.md
+    - Rust Backend 🦀: rust_backend.md
     - Custom Collector: custom_collector.md
   - Tutorial:
     - FastAPI: fastapi.md
