@@ -201,6 +201,21 @@ class TestMetric:
 
     # labels
 
+    def test_labels_with_dict(self):
+        metric = _Metric("name", "desc", required_labels=["a"])
+        new = metric.labels({"a": "1"})
+        assert new._labels == {"a": "1"}
+
+    def test_labels_with_kwargs(self):
+        metric = _Metric("name", "desc", required_labels=["a"])
+        new = metric.labels(a="1")
+        assert new._labels == {"a": "1"}
+
+    def test_labels_with_dict_and_kwargs_raises(self):
+        metric = _Metric("name", "desc", required_labels=["a"])
+        with pytest.raises(LabelValidationException):
+            metric.labels({"a": "1"}, a="1")
+
     def test_labels_without_labels_return_itself(self):
         metric = _Metric("name", "desc")
         new = metric.labels({})

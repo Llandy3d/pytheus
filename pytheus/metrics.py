@@ -202,13 +202,19 @@ class _Metric:
         if not self._can_observe:
             raise UnobservableMetricException
 
-    def labels(self, labels_: Labels) -> "_Metric":
+    def labels(self, pytheus_labels_: Optional[Labels] = None, **kwargs: str) -> "_Metric":
         """
         If no labels is passed to the call returns itself.
         If there are already present labels, they will be updated with the passed labels_ and if
         it's not observable will just return the new child instance. Otherwise it will also add
         the instance to the labeled_metrics on the collector.
         """
+        if pytheus_labels_ and kwargs:
+            raise LabelValidationException("Please use either a dict or kwargs, not both.")
+
+        # if we got labels as kwargs, we use that directly
+        labels_ = kwargs if pytheus_labels_ is None else pytheus_labels_
+
         if not labels_:
             return self
 
