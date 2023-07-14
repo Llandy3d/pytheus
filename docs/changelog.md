@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- `kwargs` (keyword arguments) support for the `labels()` method.
+   ```python
+   metric = Counter("counter", "desc", required_labels=["method"])
+
+   # dict approach
+   metric.labels({"method": "POST"})
+
+   # kwargs approach
+   metric.labels(method="POST")
+
+   ```
+
 ## 0.1.0
 
 - asgi middleware for `FastAPI` support
