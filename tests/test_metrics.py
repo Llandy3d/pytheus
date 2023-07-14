@@ -99,7 +99,7 @@ class TestMetricCollector:
         assert 1 == samples[0].labels["a"]
 
     def test_collect_with_labels_and_default_labels(self):
-        default_labels = {"a": 3}
+        default_labels = {"a": "3"}
         counter = Counter("name", "desc", required_labels=["a", "b"], default_labels=default_labels)
         counter_a = counter.labels({"a": "1", "b": "2"})  # noqa: F841
         counter_b = counter.labels({"a": "7", "b": "8"})  # noqa: F841
@@ -110,7 +110,7 @@ class TestMetricCollector:
         assert len(samples) == 3
         assert samples[0].labels["a"] == "1"
         assert samples[1].labels["a"] == "7"
-        assert samples[2].labels["a"] == 3
+        assert samples[2].labels["a"] == "3"
 
     def test_collector_created_on_metric_creation(self):
         counter = Counter("name", "desc", required_labels=["a", "b"])
@@ -145,7 +145,7 @@ class TestMetric:
     def test_create_metric_raises_with_labels(self):
         # only default labels are allowed to be set on creation
         with pytest.raises(LabelValidationException):
-            _Metric("name", "desc", required_labels=["a"], labels={"a": 1})
+            _Metric("name", "desc", required_labels=["a"], labels={"a": "1"})
 
     def test_check_can_observe_without_required_labels(self):
         metric = _Metric("name", "desc")
@@ -157,22 +157,22 @@ class TestMetric:
 
     def test_check_can_observe_with_required_labels_with_partial_labels(self):
         metric = _Metric("name", "desc", required_labels=["bob", "cat"])
-        metric = metric.labels({"bob": 2})
+        metric = metric.labels({"bob": "2"})
         assert metric._check_can_observe() is False
 
     def test_check_can_observe_with_required_labels_with_labels(self):
         metric = _Metric("name", "desc", required_labels=["bob", "cat"])
-        metric = metric.labels({"bob": 1, "cat": 2})
+        metric = metric.labels({"bob": "1", "cat": "2"})
         assert metric._check_can_observe() is True
 
     def test_raises_if_cannot_be_observed_observable(self):
         metric = _Metric("name", "desc", required_labels=["bob", "cat"])
-        metric = metric.labels({"bob": 1, "cat": 2})
+        metric = metric.labels({"bob": "1", "cat": "2"})
         metric._raise_if_cannot_observe()
 
     def test_raises_if_cannot_be_observed_unobservable(self):
         metric = _Metric("name", "desc", required_labels=["bob", "cat"])
-        metric = metric.labels({"bob": 1})
+        metric = metric.labels({"bob": "1"})
         with pytest.raises(UnobservableMetricException):
             metric._raise_if_cannot_observe()
 
@@ -181,25 +181,46 @@ class TestMetric:
             "name",
             "desc",
             required_labels=["bob", "cat"],
-            default_labels={"bob": 1, "cat": 2},
+            default_labels={"bob": "1", "cat": "2"},
         )
         assert metric._check_can_observe() is True
 
     def test_check_can_observe_with_default_labels_partial_uncomplete(self):
-        metric = _Metric("name", "desc", required_labels=["bob", "cat"], default_labels={"bob": 1})
+        metric = _Metric(
+            "name", "desc", required_labels=["bob", "cat"], default_labels={"bob": "1"}
+        )
         assert metric._check_can_observe() is False
 
     def test_check_can_observe_with_default_labels_partial_complete(self):
-        metric = _Metric("name", "desc", required_labels=["bob", "cat"], default_labels={"bob": 1})
-        metric = metric.labels({"cat": 2})
+        metric = _Metric(
+            "name", "desc", required_labels=["bob", "cat"], default_labels={"bob": "1"}
+        )
+        metric = metric.labels({"cat": "2"})
         assert metric._check_can_observe() is True
 
     def test_check_can_observe_with_default_labels_partial_overriden_label(self):
-        metric = _Metric("name", "desc", required_labels=["bob", "cat"], default_labels={"bob": 1})
-        metric = metric.labels({"cat": 2, "bob": 2})
+        metric = _Metric(
+            "name", "desc", required_labels=["bob", "cat"], default_labels={"bob": "1"}
+        )
+        metric = metric.labels({"cat": "2", "bob": "2"})
         assert metric._check_can_observe() is True
 
     # labels
+
+    def test_labels_with_dict(self):
+        metric = _Metric("name", "desc", required_labels=["a"])
+        new = metric.labels({"a": "1"})
+        assert new._labels == {"a": "1"}
+
+    def test_labels_with_kwargs(self):
+        metric = _Metric("name", "desc", required_labels=["a"])
+        new = metric.labels(a="1")
+        assert new._labels == {"a": "1"}
+
+    def test_labels_with_dict_and_kwargs_raises(self):
+        metric = _Metric("name", "desc", required_labels=["a"])
+        with pytest.raises(LabelValidationException):
+            metric.labels({"a": "1"}, a="1")
 
     def test_labels_without_labels_return_itself(self):
         metric = _Metric("name", "desc")
@@ -209,29 +230,29 @@ class TestMetric:
     def test_labels_without_required_labels_raises(self):
         metric = _Metric("name", "desc")
         with pytest.raises(LabelValidationException):
-            metric.labels({"a": 1})
+            metric.labels({"a": "1"})
 
     def test_labels_unobservable(self):
         metric = _Metric("name", "desc", required_labels=["a", "b"])
-        metric = metric.labels({"a": 1})
+        metric = metric.labels({"a": "1"})
         assert metric not in metric._collector._labeled_metrics.values()
 
     def test_labels_observable(self):
         metric = _Metric("name", "desc", required_labels=["a", "b"])
-        metric = metric.labels({"a": 1, "b": 2})
+        metric = metric.labels({"a": "1", "b": "2"})
         assert metric in metric._collector._labeled_metrics.values()
 
     def test_labels_observable_returns_existing_child(self):
         metric = _Metric("name", "desc", required_labels=["a", "b"])
-        metric_a = metric.labels({"a": 1, "b": 2})
-        metric_b = metric.labels({"a": 1, "b": 2})
+        metric_a = metric.labels({"a": "1", "b": "2"})
+        metric_b = metric.labels({"a": "1", "b": "2"})
         assert len(metric._collector._labeled_metrics) == 1
         assert metric_a is metric_b
 
     def test_labels_with_unknown_label(self):
         metric = _Metric("name", "desc", required_labels=["a", "b"])
         with pytest.raises(LabelValidationException):
-            metric.labels({"a": 1, "c": 2})
+            metric.labels({"a": "1", "c": "2"})
 
     # default_labels
 
@@ -275,10 +296,10 @@ class TestMetric:
             required_labels=["bob", "cat"],
             default_labels=default_labels,
         )
-        metric = metric.labels({"cat": 2})
+        metric = metric.labels({"cat": "2"})
         sample = metric._get_sample()
 
-        assert sample.labels == {"bob": "bobvalue", "cat": 2}
+        assert sample.labels == {"bob": "bobvalue", "cat": "2"}
 
     def test_add_default_labels_to_sample_does_not_ovveride_provided_labels(self):
         default_labels = {"bob": "bobvalue"}
@@ -288,10 +309,10 @@ class TestMetric:
             required_labels=["bob", "cat"],
             default_labels=default_labels,
         )
-        metric = metric.labels({"cat": 2, "bob": "newvalue"})
+        metric = metric.labels({"cat": "2", "bob": "newvalue"})
         sample = metric._get_sample()
 
-        assert sample.labels == {"bob": "newvalue", "cat": 2}
+        assert sample.labels == {"bob": "newvalue", "cat": "2"}
 
 
 class TestCounter:
