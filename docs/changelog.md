@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0
+
 - `kwargs` (keyword arguments) support for the `labels()` method.
    ```python
    metric = Counter("counter", "desc", required_labels=["method"])
