@@ -51,6 +51,15 @@ page_hit_total.labels({'method': 'GET'}).inc()
 !!! note
 
     The `labels` method accepts `dict[str, str]` where the key of the dictionary is the label name and the value is the value of the label.
+    Alternatively you can use keyword arguments.
+
+!!! tip
+
+    You can use `kwargs` instead of a `dict` like this:
+
+    ```python
+    page_hit_total.labels(method='GET'}).inc()
+    ```
 
 we can do the same for the label mapped to the value `POST` and the metrics created would be:
 

@@ -16,6 +16,9 @@ my_metric.labels({'req1': '1', 'req2': '2'}).inc()  # you can pass all the label
 partial_my_metric = my_metric.labels({'req1': '1'})  # a cacheable object with one of the required labels already set
 observable_my_metric = partial_my_metric.labels({'req2': '2'})  # finish setting the remaining values before observing
 observable_my_metric.inc()
+
+# alternatively to using a `dict` you can use `kwargs` (keyword arguments)
+my_metric.labels(req1='1', req2='2')
 ```
 
 ## Default Labels
