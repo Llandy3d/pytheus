@@ -74,3 +74,29 @@ INFO:pytheus_backend_rs:RedisBackend initialized
 The Rust powered `RedisBackend` is safe to be used in `async` applications!
 
 The only detail is that for now it is preferable to use the `generate_metrics` function inside a `ThreadPool` for such applications.
+
+---
+
+## Performance vs Python ⚡️
+
+The Rust backend library includes single process implementations as well.
+One equal to the Python implementation using Mutexes and one using Atomics.
+
+!!! info
+
+    - `SingleProcessBackend` for the Mutex.
+    - `SingleProcessAtomicBackend` for the Atomic.
+
+A simple benchmark with having a single `Counter` incrementing with `1 billion` iterations shows that there are performance improvements coming from just using the same implementation in `Rust`.
+
+Between the `Mutex` and `Atomic` approach the performance gain is small, with the atomics approach being slightly faster.
+
+---
+
+**_1_000_000_000 iterations_**
+
+| Implementation | Time taken (seconds) |
+| ---------------| ---------------------|
+| `Python Mutex` | 🐢 325~              |
+| `Rust Mutex`   | 🐇 223~              |
+| `Rust Atomic`  | 🐇 215~              |
