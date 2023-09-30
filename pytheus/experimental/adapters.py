@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Optional, Sequence
+from typing import Any, Callable, Iterable, Optional, Sequence
 
 from pytheus.metrics import Histogram, _Metric
 from pytheus.registry import REGISTRY, Registry
@@ -50,6 +50,28 @@ def _get_pytheus_metric_from_labels(
     return _pytheus_metric.labels(labels)
 
 
+class DecoratorContextManagerAdapter:
+    """
+    Please don't judge me.
+    """
+
+    def __init__(self, _pytheus_metric: _Metric) -> None:
+        self._pytheus_metric = _pytheus_metric
+        self._pytheus_contextmanager = None
+
+    def __enter__(self):  # type: ignore
+        self._pytheus_contextmanager = self._pytheus_metric.time()
+        self._pytheus_contextmanager.__enter__()
+        return self
+
+    def __exit__(self, typ, value, traceback):  # type: ignore
+        self._pytheus_contextmanager.__exit__(typ, value, traceback)
+        pass
+
+    def __call__(self, f: Callable[..., Any]) -> Callable[..., Any]:
+        return self._pytheus_metric.__call__(f)  # type: ignore
+
+
 class HistogramAdapter:
     def __init__(
         self,
@@ -80,6 +102,9 @@ class HistogramAdapter:
 
     def observe(self, amount: float) -> None:
         self._pytheus_metric.observe(amount)  # type: ignore
+
+    def time(self) -> DecoratorContextManagerAdapter:
+        return DecoratorContextManagerAdapter(self._pytheus_metric)
 
     def labels(self, *labelvalues: Any, **labelkwargs: Any) -> "HistogramAdapter":
         new_pytheus_metric = _get_pytheus_metric_from_labels(

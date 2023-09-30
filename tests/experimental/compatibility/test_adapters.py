@@ -64,3 +64,18 @@ class TestHistogram:
         child_two = histogram.labels(one="hello", two="world")
 
         assert child_one._pytheus_metric is child_two._pytheus_metric
+
+    def test_time_decorator(self, histogram):
+        @histogram.time()
+        def test():
+            pass
+
+        test()
+
+        assert histogram._pytheus_metric._sum.get() != 0
+
+    def test_time_contextmanager(self, histogram):
+        with histogram.time():
+            pass
+
+        assert histogram._pytheus_metric._sum.get() != 0
