@@ -40,12 +40,12 @@ class TestHistogram:
 
     def test_creation(self, histogram):
         assert isinstance(histogram, HistogramAdapter)
-        assert histogram._pytheus_histogram.name == "name"
-        assert histogram._pytheus_histogram.description == "desc"
+        assert histogram._pytheus_metric.name == "name"
+        assert histogram._pytheus_metric.description == "desc"
 
     def test_observe(self, histogram):
         histogram.observe(7.7)
-        assert histogram._pytheus_histogram._sum.get() == 7.7
+        assert histogram._pytheus_metric._sum.get() == 7.7
 
     def test_labels(self):
         histogram = prometheus_client.Histogram("name", "desc", labelnames=["one", "two"])
@@ -55,12 +55,12 @@ class TestHistogram:
         child_args.observe(2)
         child_kwargs.observe(3)
 
-        assert child_args._pytheus_histogram._sum.get() == 2
-        assert child_kwargs._pytheus_histogram._sum.get() == 3
+        assert child_args._pytheus_metric._sum.get() == 2
+        assert child_kwargs._pytheus_metric._sum.get() == 3
 
     def test_instantiating_multiple_childs(self):
         histogram = prometheus_client.Histogram("name", "desc", labelnames=["one", "two"])
         child_one = histogram.labels(one="hello", two="world")
         child_two = histogram.labels(one="hello", two="world")
 
-        assert child_one._pytheus_histogram is child_two._pytheus_histogram
+        assert child_one._pytheus_metric is child_two._pytheus_metric

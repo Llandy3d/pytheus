@@ -32,10 +32,10 @@ class HistogramAdapter:
         self._has_labels = False
 
         if _pytheus_metric:
-            self._pytheus_histogram = _pytheus_metric
+            self._pytheus_metric = _pytheus_metric
             self._has_labels = True
         else:
-            self._pytheus_histogram = Histogram(
+            self._pytheus_metric = Histogram(
                 _build_name(name, namespace, subsystem),
                 description=documentation,
                 required_labels=self._labelnames,
@@ -44,7 +44,7 @@ class HistogramAdapter:
             )
 
     def observe(self, value: float) -> None:
-        self._pytheus_histogram.observe(value)  # type: ignore
+        self._pytheus_metric.observe(value)  # type: ignore
 
     def labels(self, *labelvalues: Any, **labelkwargs: Any) -> "HistogramAdapter":
         if not self._labelnames:
@@ -68,7 +68,7 @@ class HistogramAdapter:
         labels = {key: value for key, value in zip(self._labelnames, labelvalues)}
         # NOTE: here we return new Adapters even for the same labels but the underlying
         # pytheus metric will correctly handle sharing child instances
-        new_pytheus_metric = self._pytheus_histogram.labels(labels)
+        new_pytheus_metric = self._pytheus_metric.labels(labels)
         return HistogramAdapter(
             name="",
             documentation="",
