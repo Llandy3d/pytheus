@@ -120,3 +120,52 @@ class TestCounter:
                 pass
 
         assert counter._pytheus_metric._metric_value_backend.get() == 1
+
+
+class TestGauge:
+    @pytest.fixture
+    def gauge(self, set_empty_registry):
+        return prometheus_client.Gauge("name", "desc")
+
+    def test_inc(self, gauge):
+        gauge.inc(3)
+        assert gauge._pytheus_metric._metric_value_backend.get() == 3
+
+    def test_dec(self, gauge):
+        gauge.dec(3)
+        assert gauge._pytheus_metric._metric_value_backend.get() == -3
+
+    def test_set(self, gauge):
+        gauge.inc(3)
+        gauge.set(2)
+        assert gauge._pytheus_metric._metric_value_backend.get() == 2
+
+    def test_track_inprogress_decorator(self, gauge):
+        @gauge.track_inprogress()
+        def test():
+            assert gauge._pytheus_metric._metric_value_backend.get() == 1
+
+            test()
+
+        assert gauge._pytheus_metric._metric_value_backend.get() == 0
+
+    def test_track_inprogress_contextmanager(self, gauge):
+        with gauge.track_inprogress():
+            assert gauge._pytheus_metric._metric_value_backend.get() == 1
+
+        assert gauge._pytheus_metric._metric_value_backend.get() == 0
+
+    def test_time_decorator(self, gauge):
+        @gauge.time()
+        def test():
+            pass
+
+        test()
+
+        assert gauge._pytheus_metric._metric_value_backend.get() != 0
+
+    def test_time_contextmanager(self, gauge):
+        with gauge.time():
+            pass
+
+        assert gauge._pytheus_metric._metric_value_backend.get() != 0

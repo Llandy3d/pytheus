@@ -7,15 +7,15 @@ I just need to try some things without changing a whole internal library first :
 2. Call `patch_client`
 3. ?
 """
-from pytheus.experimental.adapters import CounterAdapter, HistogramAdapter
+from pytheus.experimental.adapters import CounterAdapter, GaugeAdapter, HistogramAdapter
 from pytheus.exposition import generate_metrics
-from pytheus.metrics import Gauge, Summary
+from pytheus.metrics import Summary
 from pytheus.registry import REGISTRY, CollectorRegistry
 
 """
 from pytheus.registry import REGISTRY, CollectorRegistry
 
-from pytheus.metrics import Gauge, Summary
+from pytheus.metrics import Summary
 
 from pytheus.exposition import generate_metrics
 """
@@ -32,7 +32,7 @@ patches = {
     "CollectorRegistry": CollectorRegistry,
     # metrics
     "Counter": CounterAdapter,
-    "Gauge": Gauge,
+    "Gauge": GaugeAdapter,
     "Histogram": HistogramAdapter,
     "Summary": Summary,
     # misc

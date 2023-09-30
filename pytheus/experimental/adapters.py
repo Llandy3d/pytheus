@@ -1,6 +1,7 @@
+import time
 from typing import Any, Callable, Iterable, Optional, Sequence, Tuple, Type, Union
 
-from pytheus.metrics import Counter, Histogram, _Metric
+from pytheus.metrics import Counter, Gauge, Histogram, _Metric
 from pytheus.registry import REGISTRY, Registry
 
 
@@ -74,7 +75,10 @@ class DecoratorContextManagerAdapter:
         pass
 
     def __call__(self, f: Callable[..., Any]) -> Callable[..., Any]:
-        return self._pytheus_metric.__call__(f)  # type: ignore
+        if self._func == "track_inprogress":
+            return self._pytheus_metric.__call__(f, track_inprogress=True)  # type: ignore
+        else:
+            return self._pytheus_metric.__call__(f)  # type: ignore
 
 
 class HistogramAdapter:
@@ -171,6 +175,66 @@ class CounterAdapter:
             self._pytheus_metric,
         )
         return CounterAdapter(
+            name="",
+            documentation="",
+            labelnames=self._labelnames,
+            _pytheus_metric=new_pytheus_metric,
+        )
+
+
+class GaugeAdapter:
+    def __init__(
+        self,
+        name: str,
+        documentation: str,
+        labelnames: Optional[Iterable[str]] = None,
+        namespace: str = "",
+        subsystem: str = "",
+        registry: Optional[Registry] = REGISTRY,
+        _pytheus_metric: Optional[_Metric] = None,
+    ) -> None:
+        self._labelnames = sorted(labelnames) if labelnames else None
+        self._has_labels = False
+
+        if _pytheus_metric:
+            self._pytheus_metric = _pytheus_metric
+            self._has_labels = True
+        else:
+            self._pytheus_metric = Gauge(
+                _build_name(name, namespace, subsystem),
+                description=documentation,
+                required_labels=self._labelnames,
+                registry=registry,
+            )
+
+    def inc(self, amount: float = 1) -> None:
+        self._pytheus_metric.inc(amount)  # type: ignore
+
+    def dec(self, amount: float = 1) -> None:
+        self._pytheus_metric.dec(amount)  # type: ignore
+
+    def set(self, amount: float) -> None:
+        self._pytheus_metric.set(amount)  # type: ignore
+
+    def set_to_current_time(self) -> None:
+        self.set(time.time())
+
+    def track_inprogress(self) -> DecoratorContextManagerAdapter:
+        return DecoratorContextManagerAdapter(self._pytheus_metric, "track_inprogress")
+
+    def time(self) -> DecoratorContextManagerAdapter:
+        return DecoratorContextManagerAdapter(self._pytheus_metric, "time")
+
+    def labels(self, *labelvalues: Any, **labelkwargs: Any) -> "GaugeAdapter":
+        new_pytheus_metric = _get_pytheus_metric_from_labels(
+            self,
+            labelvalues,
+            labelkwargs,
+            self._labelnames,
+            self._has_labels,
+            self._pytheus_metric,
+        )
+        return GaugeAdapter(
             name="",
             documentation="",
             labelnames=self._labelnames,
