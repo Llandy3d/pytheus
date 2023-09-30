@@ -15,6 +15,41 @@ def _build_name(name: str, namespace: str, subsystem: str) -> str:
     return merged_name
 
 
+def _get_pytheus_metric_from_labels(
+    instance: Any,
+    labelvalues: Any,
+    labelkwargs: Any,
+    _labelnames: Optional[Sequence[str]],
+    _has_labels: bool,
+    _pytheus_metric: _Metric,
+) -> _Metric:
+    pass
+
+    if not _labelnames:
+        raise ValueError("No label names were set when constructing %s" % instance)
+
+    if _has_labels:
+        raise ValueError(f"{instance} already has labels set.; can not chain calls to .labels()")
+
+    if labelvalues and labelkwargs:
+        raise ValueError("Can't pass both *args and **kwargs")
+
+    if labelkwargs:
+        if sorted(labelkwargs) != sorted(_labelnames):
+            raise ValueError("Incorrect label names")
+        labelvalues = tuple(str(labelkwargs[label]) for label in _labelnames)
+    else:
+        if len(labelvalues) != len(_labelnames):
+            raise ValueError("Incorrect label count")
+        labelvalues = tuple(str(label) for label in labelvalues)
+
+    labels = {key: value for key, value in zip(_labelnames, labelvalues)}
+
+    # NOTE: here we return new Adapters even for the same labels but the underlying
+    # pytheus metric will correctly handle sharing child instances
+    return _pytheus_metric.labels(labels)
+
+
 class HistogramAdapter:
     def __init__(
         self,
@@ -47,28 +82,14 @@ class HistogramAdapter:
         self._pytheus_metric.observe(value)  # type: ignore
 
     def labels(self, *labelvalues: Any, **labelkwargs: Any) -> "HistogramAdapter":
-        if not self._labelnames:
-            raise ValueError("No label names were set when constructing %s" % self)
-
-        if self._has_labels:
-            raise ValueError(f"{self} already has labels set.; can not chain calls to .labels()")
-
-        if labelvalues and labelkwargs:
-            raise ValueError("Can't pass both *args and **kwargs")
-
-        if labelkwargs:
-            if sorted(labelkwargs) != sorted(self._labelnames):
-                raise ValueError("Incorrect label names")
-            labelvalues = tuple(str(labelkwargs[label]) for label in self._labelnames)
-        else:
-            if len(labelvalues) != len(self._labelnames):
-                raise ValueError("Incorrect label count")
-            labelvalues = tuple(str(label) for label in labelvalues)
-
-        labels = {key: value for key, value in zip(self._labelnames, labelvalues)}
-        # NOTE: here we return new Adapters even for the same labels but the underlying
-        # pytheus metric will correctly handle sharing child instances
-        new_pytheus_metric = self._pytheus_metric.labels(labels)
+        new_pytheus_metric = _get_pytheus_metric_from_labels(
+            self,
+            labelvalues,
+            labelkwargs,
+            self._labelnames,
+            self._has_labels,
+            self._pytheus_metric,
+        )
         return HistogramAdapter(
             name="",
             documentation="",
