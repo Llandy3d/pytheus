@@ -35,6 +35,7 @@ def test_build_name_with_name(name, namespace, subsystem, expected):
 class TestHistogram:
     @pytest.fixture
     def histogram(self, set_empty_registry):
+        load_backend()  # test issues :(
         return prometheus_client.Histogram("name", "desc")
 
     def test_creation(self, histogram):
@@ -47,7 +48,6 @@ class TestHistogram:
         assert histogram._pytheus_histogram._sum.get() == 7.7
 
     def test_labels(self):
-        load_backend()  # test issues :(
         histogram = prometheus_client.Histogram("name", "desc", labelnames=["one", "two"])
         child_args = histogram.labels("hello", "world")
         child_kwargs = histogram.labels(one="bob", two="cat")
@@ -57,3 +57,10 @@ class TestHistogram:
 
         assert child_args._pytheus_histogram._sum.get() == 2
         assert child_kwargs._pytheus_histogram._sum.get() == 3
+
+    def test_instantiating_multiple_childs(self):
+        histogram = prometheus_client.Histogram("name", "desc", labelnames=["one", "two"])
+        child_one = histogram.labels(one="hello", two="world")
+        child_two = histogram.labels(one="hello", two="world")
+
+        assert child_one._pytheus_histogram is child_two._pytheus_histogram

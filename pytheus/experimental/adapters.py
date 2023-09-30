@@ -66,6 +66,8 @@ class HistogramAdapter:
             labelvalues = tuple(str(label) for label in labelvalues)
 
         labels = {key: value for key, value in zip(self._labelnames, labelvalues)}
+        # NOTE: here we return new Adapters even for the same labels but the underlying
+        # pytheus metric will correctly handle sharing child instances
         new_pytheus_metric = self._pytheus_histogram.labels(labels)
         return HistogramAdapter(
             name="",
