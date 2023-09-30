@@ -79,3 +79,44 @@ class TestHistogram:
             pass
 
         assert histogram._pytheus_metric._sum.get() != 0
+
+
+class TestCounter:
+    @pytest.fixture
+    def counter(self, set_empty_registry):
+        return prometheus_client.Counter("name", "desc")
+
+    def test_inc(self, counter):
+        counter.inc(3)
+        assert counter._pytheus_metric._metric_value_backend.get() == 3
+
+    def test_exception_decorator(self, counter):
+        @counter.count_exceptions()
+        def test():
+            raise ValueError
+
+        try:
+            test()
+        except Exception:
+            pass
+
+        assert counter._pytheus_metric._metric_value_backend.get() == 1
+
+    def test_exception_contextmanager(self, counter):
+        try:
+            with counter.count_exceptions():
+                raise ValueError
+        except Exception:
+            pass
+
+        assert counter._pytheus_metric._metric_value_backend.get() == 1
+
+    def test_exception_with_specified(self, counter):
+        for exception in [ValueError, KeyError]:
+            try:
+                with counter.count_exceptions(ValueError):
+                    raise exception
+            except Exception:
+                pass
+
+        assert counter._pytheus_metric._metric_value_backend.get() == 1

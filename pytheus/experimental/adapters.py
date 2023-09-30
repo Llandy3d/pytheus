@@ -1,6 +1,6 @@
-from typing import Any, Callable, Iterable, Optional, Sequence
+from typing import Any, Callable, Iterable, Optional, Sequence, Tuple, Type, Union
 
-from pytheus.metrics import Histogram, _Metric
+from pytheus.metrics import Counter, Histogram, _Metric
 from pytheus.registry import REGISTRY, Registry
 
 
@@ -55,14 +55,19 @@ class DecoratorContextManagerAdapter:
     Please don't judge me.
     """
 
-    def __init__(self, _pytheus_metric: _Metric) -> None:
+    def __init__(self, _pytheus_metric: _Metric, _func: str, *args: Any) -> None:
         self._pytheus_metric = _pytheus_metric
+        self._func = _func
+        self._args = args
         self._pytheus_contextmanager = None
 
     def __enter__(self):  # type: ignore
-        self._pytheus_contextmanager = self._pytheus_metric.time()
+        func = getattr(self._pytheus_metric, self._func)
+        if self._args:
+            self._pytheus_contextmanager = func(self._args)
+        else:
+            self._pytheus_contextmanager = func()
         self._pytheus_contextmanager.__enter__()
-        return self
 
     def __exit__(self, typ, value, traceback):  # type: ignore
         self._pytheus_contextmanager.__exit__(typ, value, traceback)
@@ -104,7 +109,7 @@ class HistogramAdapter:
         self._pytheus_metric.observe(amount)  # type: ignore
 
     def time(self) -> DecoratorContextManagerAdapter:
-        return DecoratorContextManagerAdapter(self._pytheus_metric)
+        return DecoratorContextManagerAdapter(self._pytheus_metric, "time")
 
     def labels(self, *labelvalues: Any, **labelkwargs: Any) -> "HistogramAdapter":
         new_pytheus_metric = _get_pytheus_metric_from_labels(
@@ -116,6 +121,56 @@ class HistogramAdapter:
             self._pytheus_metric,
         )
         return HistogramAdapter(
+            name="",
+            documentation="",
+            labelnames=self._labelnames,
+            _pytheus_metric=new_pytheus_metric,
+        )
+
+
+class CounterAdapter:
+    def __init__(
+        self,
+        name: str,
+        documentation: str,
+        labelnames: Optional[Iterable[str]] = None,
+        namespace: str = "",
+        subsystem: str = "",
+        registry: Optional[Registry] = REGISTRY,
+        _pytheus_metric: Optional[_Metric] = None,
+    ) -> None:
+        self._labelnames = sorted(labelnames) if labelnames else None
+        self._has_labels = False
+
+        if _pytheus_metric:
+            self._pytheus_metric = _pytheus_metric
+            self._has_labels = True
+        else:
+            self._pytheus_metric = Counter(
+                _build_name(name, namespace, subsystem),
+                description=documentation,
+                required_labels=self._labelnames,
+                registry=registry,
+            )
+
+    def inc(self, amount: float = 1) -> None:
+        self._pytheus_metric.inc(amount)  # type: ignore
+
+    def count_exceptions(
+        self, exception: Union[Type[BaseException], Tuple[Type[BaseException], ...]] = Exception
+    ) -> DecoratorContextManagerAdapter:
+        return DecoratorContextManagerAdapter(self._pytheus_metric, "count_exceptions", exception)
+
+    def labels(self, *labelvalues: Any, **labelkwargs: Any) -> "CounterAdapter":
+        new_pytheus_metric = _get_pytheus_metric_from_labels(
+            self,
+            labelvalues,
+            labelkwargs,
+            self._labelnames,
+            self._has_labels,
+            self._pytheus_metric,
+        )
+        return CounterAdapter(
             name="",
             documentation="",
             labelnames=self._labelnames,
