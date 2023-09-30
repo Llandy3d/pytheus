@@ -78,8 +78,8 @@ class HistogramAdapter:
                 buckets=buckets,
             )
 
-    def observe(self, value: float) -> None:
-        self._pytheus_metric.observe(value)  # type: ignore
+    def observe(self, amount: float) -> None:
+        self._pytheus_metric.observe(amount)  # type: ignore
 
     def labels(self, *labelvalues: Any, **labelkwargs: Any) -> "HistogramAdapter":
         new_pytheus_metric = _get_pytheus_metric_from_labels(
