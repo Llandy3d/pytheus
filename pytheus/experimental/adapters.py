@@ -312,6 +312,7 @@ class SummaryAdapter:
 class CollectorRegistryAdapter:
     def __init__(self, prefix: Optional[str] = None) -> None:
         self._registry = CollectorRegistry(prefix)
+        self._prefix = prefix
 
     def register(self, collector: Collector) -> None:
         self._registry.register(collector)
@@ -325,11 +326,3 @@ class CollectorRegistryAdapter:
     @property
     def _names_to_collectors(self) -> Dict[str, Collector]:
         return self._registry._collectors
-
-    @property
-    def prefix(self) -> Optional[str]:
-        return self._registry.prefix
-
-    @property
-    def _prefix(self) -> Optional[str]:
-        return self._registry.prefix
