@@ -1,7 +1,7 @@
 from unittest import mock
 
 from pytheus.exposition import _escape_help, format_labels, generate_metrics
-from pytheus.metrics import Counter, Histogram
+from pytheus.metrics import Counter, CustomCollector, Histogram
 from pytheus.registry import REGISTRY, CollectorRegistry
 
 
@@ -118,6 +118,43 @@ class TestExposition:
         formatted_string = format_labels(labels)
 
         assert formatted_string == expected
+
+    def test_generate_metrics_custom_collector(self):
+        class _TestCustomCollector(CustomCollector):
+            def collect(self):
+                metric = Counter("name", "desc", required_labels=["bob"], registry=None)
+                metric.labels(bob="cat").inc(2.7)
+                yield metric
+
+        registry = CollectorRegistry()
+        registry.register(_TestCustomCollector())
+        metrics_text = generate_metrics(registry)
+        assert metrics_text == (
+            "# HELP name desc\n" "# TYPE name counter\n" 'name{bob="cat"} 2.7\n' ""
+        )
+
+    def test_generate_metrics_custom_collector_with_multiple_metrics(self):
+        class _TestCustomCollector(CustomCollector):
+            def collect(self):
+                metric = Counter("name", "desc", required_labels=["bob"], registry=None)
+                metric.labels(bob="cat").inc(2.7)
+                second_metric = Counter("second", "desc")
+                second_metric.inc(3)
+                yield metric
+                yield second_metric
+
+        registry = CollectorRegistry()
+        registry.register(_TestCustomCollector())
+        metrics_text = generate_metrics(registry)
+        assert metrics_text == (
+            "# HELP name desc\n"
+            "# TYPE name counter\n"
+            'name{bob="cat"} 2.7\n'
+            "# HELP second desc\n"
+            "# TYPE second counter\n"
+            "second 3.0\n"
+            ""
+        )
 
     def test_escape_help(self):
         # \ -> \\

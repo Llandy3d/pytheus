@@ -67,6 +67,14 @@ def generate_from_collector(
     """
     Returns the metrics from a given collector in prometheus text format
     """
+    # bad way to check that is a custom collector
+    if not hasattr(collector, "description"):
+        pass
+        # TODO: custom collector don't have the prefix, might need to change behaviour or
+        # support more functionality depending on usecase
+        lines = (generate_from_collector(metric._collector) for metric in collector.collect())
+        return LINE_SEPARATOR.join(lines)
+
     metric_name = f"{prefix}_{collector.name}" if prefix else collector.name
     help_text = f"# HELP {metric_name} {_escape_help(collector.description)}"
     type_text = f"# TYPE {metric_name} {collector.type_}"
