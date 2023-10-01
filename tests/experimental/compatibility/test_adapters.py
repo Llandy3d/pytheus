@@ -169,3 +169,29 @@ class TestGauge:
             pass
 
         assert gauge._pytheus_metric._metric_value_backend.get() != 0
+
+
+class TestSummary:
+    @pytest.fixture
+    def summary(self, set_empty_registry):
+        load_backend()  # test issues :(
+        return prometheus_client.Summary("name", "desc")
+
+    def test_observe(self, summary):
+        summary.observe(7.7)
+        assert summary._pytheus_metric._sum.get() == 7.7
+
+    def test_time_decorator(self, summary):
+        @summary.time()
+        def test():
+            pass
+
+        test()
+
+        assert summary._pytheus_metric._sum.get() != 0
+
+    def test_time_contextmanager(self, summary):
+        with summary.time():
+            pass
+
+        assert summary._pytheus_metric._sum.get() != 0

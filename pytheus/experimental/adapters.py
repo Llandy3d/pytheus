@@ -1,7 +1,7 @@
 import time
 from typing import Any, Callable, Iterable, Optional, Sequence, Tuple, Type, Union
 
-from pytheus.metrics import Counter, Gauge, Histogram, _Metric
+from pytheus.metrics import Counter, Gauge, Histogram, Summary, _Metric
 from pytheus.registry import REGISTRY, Registry
 
 
@@ -235,6 +235,54 @@ class GaugeAdapter:
             self._pytheus_metric,
         )
         return GaugeAdapter(
+            name="",
+            documentation="",
+            labelnames=self._labelnames,
+            _pytheus_metric=new_pytheus_metric,
+        )
+
+
+class SummaryAdapter:
+    def __init__(
+        self,
+        name: str,
+        documentation: str,
+        labelnames: Optional[Iterable[str]] = None,
+        namespace: str = "",
+        subsystem: str = "",
+        registry: Optional[Registry] = REGISTRY,
+        _pytheus_metric: Optional[_Metric] = None,
+    ) -> None:
+        self._labelnames = sorted(labelnames) if labelnames else None
+        self._has_labels = False
+
+        if _pytheus_metric:
+            self._pytheus_metric = _pytheus_metric
+            self._has_labels = True
+        else:
+            self._pytheus_metric = Summary(
+                _build_name(name, namespace, subsystem),
+                description=documentation,
+                required_labels=self._labelnames,
+                registry=registry,
+            )
+
+    def observe(self, amount: float) -> None:
+        self._pytheus_metric.observe(amount)  # type: ignore
+
+    def time(self) -> DecoratorContextManagerAdapter:
+        return DecoratorContextManagerAdapter(self._pytheus_metric, "time")
+
+    def labels(self, *labelvalues: Any, **labelkwargs: Any) -> "SummaryAdapter":
+        new_pytheus_metric = _get_pytheus_metric_from_labels(
+            self,
+            labelvalues,
+            labelkwargs,
+            self._labelnames,
+            self._has_labels,
+            self._pytheus_metric,
+        )
+        return SummaryAdapter(
             name="",
             documentation="",
             labelnames=self._labelnames,
