@@ -8,22 +8,20 @@ I just need to try some things without changing a whole internal library first :
 3. ?
 """
 from pytheus.experimental.adapters import (
+    CollectorRegistryAdapter,
     CounterAdapter,
     GaugeAdapter,
     HistogramAdapter,
     SummaryAdapter,
 )
 from pytheus.exposition import generate_metrics
-from pytheus.registry import REGISTRY, CollectorRegistry
 
-# CounterMetricFamily ???
-
-# exposition.MetricsHandler needs patching on .registry ??
+default_global_registry = CollectorRegistryAdapter()
 
 patches = {
     # registry
-    "REGISTRY": REGISTRY,
-    "CollectorRegistry": CollectorRegistry,
+    "REGISTRY": default_global_registry,
+    "CollectorRegistry": CollectorRegistryAdapter,
     # metrics
     "Counter": CounterAdapter,
     "Gauge": GaugeAdapter,

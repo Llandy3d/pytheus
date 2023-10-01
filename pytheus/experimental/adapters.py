@@ -1,8 +1,8 @@
 import time
-from typing import Any, Callable, Iterable, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Tuple, Type, Union
 
 from pytheus.metrics import Counter, Gauge, Histogram, Summary, _Metric
-from pytheus.registry import REGISTRY, Registry
+from pytheus.registry import REGISTRY, Collector, CollectorRegistry, Registry
 
 
 def _build_name(name: str, namespace: str, subsystem: str) -> str:
@@ -307,3 +307,29 @@ class SummaryAdapter:
             labelnames=self._labelnames,
             _pytheus_metric=new_pytheus_metric,
         )
+
+
+class CollectorRegistryAdapter:
+    def __init__(self, prefix: Optional[str] = None) -> None:
+        self._registry = CollectorRegistry(prefix)
+
+    def register(self, collector: Collector) -> None:
+        self._registry.register(collector)
+
+    def unregister(self, collector: Collector) -> None:
+        self._registry.unregister(collector)
+
+    def collect(self) -> Iterable[Collector]:
+        return self._registry.collect()
+
+    @property
+    def _names_to_collectors(self) -> Dict[str, Collector]:
+        return self._registry._collectors
+
+    @property
+    def prefix(self) -> Optional[str]:
+        return self._registry.prefix
+
+    @property
+    def _prefix(self) -> Optional[str]:
+        return self._registry.prefix

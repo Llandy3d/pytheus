@@ -2,10 +2,10 @@ import prometheus_client
 import pytest
 
 from pytheus.backends.base import load_backend
-from pytheus.experimental.adapters import HistogramAdapter, _build_name
-from pytheus.experimental.compatibility import patch_client
+from pytheus.experimental.adapters import CollectorRegistryAdapter, HistogramAdapter, _build_name
+from pytheus.experimental.compatibility import default_global_registry, patch_client
 from pytheus.exposition import generate_metrics
-from pytheus.registry import REGISTRY, CollectorRegistry
+from pytheus.registry import REGISTRY
 
 # patching without the fixture D=
 patch_client(prometheus_client)
@@ -17,7 +17,7 @@ def set_empty_registry():
     As the REGISTRY object is global by default, we might have data from other tests.
     So with this fixture we just set a new empty one.
     """
-    REGISTRY.set_registry(CollectorRegistry())
+    REGISTRY.set_registry(CollectorRegistryAdapter())
 
 
 @pytest.mark.parametrize(
@@ -199,11 +199,11 @@ class TestSummary:
 
 
 def test_global_registry():
-    assert prometheus_client.REGISTRY is REGISTRY
+    assert prometheus_client.REGISTRY is default_global_registry
 
 
 def test_collector_registry():
-    assert prometheus_client.CollectorRegistry is CollectorRegistry
+    assert prometheus_client.CollectorRegistry is CollectorRegistryAdapter
 
 
 def test_generate_latest():
