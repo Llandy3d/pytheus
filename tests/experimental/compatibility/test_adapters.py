@@ -208,3 +208,20 @@ def test_collector_registry():
 
 def test_generate_latest():
     assert prometheus_client.generate_latest is generate_metrics
+
+
+def test_can_be_added_to_registry():
+    registry = prometheus_client.REGISTRY
+    counter = prometheus_client.Counter("counter", "desc")
+    gauge = prometheus_client.Gauge("gauge", "desc")
+    histogram = prometheus_client.Histogram("histogram", "desc")
+    summary = prometheus_client.Summary("summary", "desc")
+    registry.register(counter)
+    registry.register(gauge)
+    registry.register(histogram)
+    registry.register(summary)
+
+    assert "counter" in registry._names_to_collectors
+    assert "gauge" in registry._names_to_collectors
+    assert "histogram" in registry._names_to_collectors
+    assert "summary" in registry._names_to_collectors
