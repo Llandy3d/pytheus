@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.3.0
+
+- fix `generate_metrics` to handle custom collectors
+
 ## 0.2.0
 
 - `kwargs` (keyword arguments) support for the `labels()` method.
