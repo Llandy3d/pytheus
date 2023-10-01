@@ -209,6 +209,7 @@ class GaugeAdapter:
         namespace: str = "",
         subsystem: str = "",
         registry: Optional[Registry] = REGISTRY,
+        multiprocess_mode: str = "unused",
         _pytheus_metric: Optional[_Metric] = None,
     ) -> None:
         self._labelnames = sorted(labelnames) if labelnames else None
