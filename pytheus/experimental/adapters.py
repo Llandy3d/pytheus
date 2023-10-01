@@ -1,7 +1,7 @@
 import time
 from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Tuple, Type, Union
 
-from pytheus.metrics import Counter, Gauge, Histogram, Sample, Summary, _Metric
+from pytheus.metrics import Counter, Gauge, Histogram, Summary, _Metric
 from pytheus.registry import REGISTRY, Collector, CollectorRegistry, Registry
 
 
@@ -82,8 +82,6 @@ class DecoratorContextManagerAdapter:
 
 
 class HistogramAdapter:
-    type_ = Histogram.type_
-
     DEFAULT_BUCKETS = (
         0.005,
         0.01,
@@ -114,7 +112,6 @@ class HistogramAdapter:
         buckets: Sequence[float] = Histogram.DEFAULT_BUCKETS,
         _pytheus_metric: Optional[_Metric] = None,
     ) -> None:
-        self.name = name
         self._labelnames = sorted(labelnames) if labelnames else None
         self._has_labels = False
 
@@ -154,8 +151,6 @@ class HistogramAdapter:
 
 
 class CounterAdapter:
-    type_ = Counter.type_
-
     def __init__(
         self,
         name: str,
@@ -166,7 +161,6 @@ class CounterAdapter:
         registry: Optional[Registry] = REGISTRY,
         _pytheus_metric: Optional[_Metric] = None,
     ) -> None:
-        self.name = name
         self._labelnames = sorted(labelnames) if labelnames else None
         self._has_labels = False
 
@@ -205,13 +199,8 @@ class CounterAdapter:
             _pytheus_metric=new_pytheus_metric,
         )
 
-    def collect(self) -> Iterable[Sample]:
-        return self._pytheus_metric.collect()
-
 
 class GaugeAdapter:
-    type_ = Gauge.type_
-
     def __init__(
         self,
         name: str,
@@ -223,7 +212,6 @@ class GaugeAdapter:
         multiprocess_mode: str = "unused",
         _pytheus_metric: Optional[_Metric] = None,
     ) -> None:
-        self.name = name
         self._labelnames = sorted(labelnames) if labelnames else None
         self._has_labels = False
 
@@ -274,8 +262,6 @@ class GaugeAdapter:
 
 
 class SummaryAdapter:
-    type_ = Summary.type_
-
     def __init__(
         self,
         name: str,
@@ -286,7 +272,6 @@ class SummaryAdapter:
         registry: Optional[Registry] = REGISTRY,
         _pytheus_metric: Optional[_Metric] = None,
     ) -> None:
-        self.name = name
         self._labelnames = sorted(labelnames) if labelnames else None
         self._has_labels = False
 
