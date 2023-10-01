@@ -326,3 +326,7 @@ class CollectorRegistryAdapter:
     @property
     def _names_to_collectors(self) -> Dict[str, Collector]:
         return self._registry._collectors
+
+    @property
+    def prefix(self) -> Optional[str]:
+        return self._prefix
