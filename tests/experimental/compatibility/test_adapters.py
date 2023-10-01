@@ -4,6 +4,7 @@ import pytest
 from pytheus.backends.base import load_backend
 from pytheus.experimental.adapters import HistogramAdapter, _build_name
 from pytheus.experimental.compatibility import patch_client
+from pytheus.exposition import generate_metrics
 from pytheus.registry import REGISTRY, CollectorRegistry
 
 # patching without the fixture D=
@@ -195,3 +196,15 @@ class TestSummary:
             pass
 
         assert summary._pytheus_metric._sum.get() != 0
+
+
+def test_global_registry():
+    assert prometheus_client.REGISTRY is REGISTRY
+
+
+def test_collector_registry():
+    assert prometheus_client.CollectorRegistry is CollectorRegistry
+
+
+def test_generate_latest():
+    assert prometheus_client.generate_latest is generate_metrics
