@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.4.0
+
+- python 3.12 support
+
 ## 0.3.0
 
 - fix `generate_metrics` to handle custom collectors
