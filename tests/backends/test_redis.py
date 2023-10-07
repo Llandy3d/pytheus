@@ -490,5 +490,11 @@ class TestGenerateSamples:
         )
 
 
+def test_set_expire_key_time():
+    load_backend(MultiProcessRedisBackend, {"expire_key_time": 300})
+
+    assert MultiProcessRedisBackend.EXPIRE_KEY_TIME == 300
+
+
 # reset to the SingleProcessBackend for other tests
 load_backend(SingleProcessBackend)

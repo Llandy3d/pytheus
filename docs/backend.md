@@ -99,6 +99,15 @@ This makes use of the `INCRBYFLOAT` & `HINCRBYFLOAT` redis operations that are `
 
     For example: `{"host": "127.0.0.1", "port": 6379, "key_prefix": "serviceprefix"}`
 
+!!! tip
+
+    You can configure the time keys will stay alive in Redis by passing the key `expire_key_time` in the configuration. This is 1 hour by default and it gets refreshed everytime an operation is done against the key, for example when it gets scraped.
+
+    ```python
+    # 5 min
+    load_backend(MultiProcessRedisBackend, {"expire_key_time": 300})
+    ```
+
 ---
 
 ## Loading a different Backend

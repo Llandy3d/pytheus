@@ -13,9 +13,6 @@ if TYPE_CHECKING:
     from pytheus.registry import Collector, Registry
 
 
-EXPIRE_KEY_TIME = 3600  # 1 hour
-
-
 class MultiProcessRedisBackend:
     """
     Provides a multi-process backend that uses Redis.
@@ -25,6 +22,7 @@ class MultiProcessRedisBackend:
     (ex. maybe store all dimensions in the same hash and be smart on retrieving everything...)
     """
 
+    EXPIRE_KEY_TIME = 3600  # 1 hour
     CONNECTION_POOL: Optional[redis.Redis] = None
 
     def __init__(
@@ -74,6 +72,10 @@ class MultiProcessRedisBackend:
         if "key_prefix" in redis_config:
             del redis_config["key_prefix"]
 
+        if "expire_key_time" in redis_config:
+            cls.EXPIRE_KEY_TIME = redis_config["expire_key_time"]
+            del redis_config["expire_key_time"]
+
         cls.CONNECTION_POOL = redis.Redis(
             **redis_config,
             decode_responses=True,
@@ -96,7 +98,7 @@ class MultiProcessRedisBackend:
         elif not self._labels_hash and not self.CONNECTION_POOL.exists(self._key_name):
             self.CONNECTION_POOL.incrbyfloat(self._key_name, 0.0)
 
-        self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
+        self.CONNECTION_POOL.expire(self._key_name, self.EXPIRE_KEY_TIME)
 
     @classmethod
     def _generate_samples(cls, registry: "Registry") -> Dict["Collector", List["Sample"]]:
@@ -113,12 +115,12 @@ class MultiProcessRedisBackend:
             if collector._required_labels:
                 # hash
                 if collector.type_ in (MetricType.COUNTER, MetricType.GAUGE):
-                    pipeline.expire(key_name, EXPIRE_KEY_TIME)
+                    pipeline.expire(key_name, cls.EXPIRE_KEY_TIME)
                     pipeline.hgetall(key_name)
                 elif collector.type_ == MetricType.SUMMARY:
                     for suffix in ("count", "sum"):
                         key_with_suffix = f"{key_name}:{suffix}"
-                        pipeline.expire(key_with_suffix, EXPIRE_KEY_TIME)
+                        pipeline.expire(key_with_suffix, cls.EXPIRE_KEY_TIME)
                         pipeline.hgetall(key_with_suffix)
                 elif collector.type_ == MetricType.HISTOGRAM:
                     for suffix in collector._metric._upper_bounds[:-1] + [
@@ -127,17 +129,17 @@ class MultiProcessRedisBackend:
                         "sum",
                     ]:
                         key_with_suffix = f"{key_name}:{suffix}"
-                        pipeline.expire(key_with_suffix, EXPIRE_KEY_TIME)
+                        pipeline.expire(key_with_suffix, cls.EXPIRE_KEY_TIME)
                         pipeline.hgetall(key_with_suffix)
             else:
                 # not hash
                 if collector.type_ in (MetricType.COUNTER, MetricType.GAUGE):
-                    pipeline.expire(key_name, EXPIRE_KEY_TIME)
+                    pipeline.expire(key_name, cls.EXPIRE_KEY_TIME)
                     pipeline.get(key_name)
                 elif collector.type_ == MetricType.SUMMARY:
                     for suffix in ("count", "sum"):
                         key_with_suffix = f"{key_name}:{suffix}"
-                        pipeline.expire(key_with_suffix, EXPIRE_KEY_TIME)
+                        pipeline.expire(key_with_suffix, cls.EXPIRE_KEY_TIME)
                         pipeline.get(key_with_suffix)
                 elif collector.type_ == MetricType.HISTOGRAM:
                     for suffix in collector._metric._upper_bounds[:-1] + [
@@ -146,7 +148,7 @@ class MultiProcessRedisBackend:
                         "sum",
                     ]:
                         key_with_suffix = f"{key_name}:{suffix}"
-                        pipeline.expire(key_with_suffix, EXPIRE_KEY_TIME)
+                        pipeline.expire(key_with_suffix, cls.EXPIRE_KEY_TIME)
                         pipeline.get(key_with_suffix)
 
         pipeline_data = pipeline.execute()
@@ -250,7 +252,7 @@ class MultiProcessRedisBackend:
         else:
             self.CONNECTION_POOL.incrbyfloat(self._key_name, value)
 
-        self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
+        self.CONNECTION_POOL.expire(self._key_name, self.EXPIRE_KEY_TIME)
 
     def dec(self, value: float) -> None:
         assert self.CONNECTION_POOL is not None
@@ -259,7 +261,7 @@ class MultiProcessRedisBackend:
         else:
             self.CONNECTION_POOL.incrbyfloat(self._key_name, -value)
 
-        self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
+        self.CONNECTION_POOL.expire(self._key_name, self.EXPIRE_KEY_TIME)
 
     def set(self, value: float) -> None:
         assert self.CONNECTION_POOL is not None
@@ -268,7 +270,7 @@ class MultiProcessRedisBackend:
         else:
             self.CONNECTION_POOL.set(self._key_name, value)
 
-        self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
+        self.CONNECTION_POOL.expire(self._key_name, self.EXPIRE_KEY_TIME)
 
     def get(self) -> float:
         """
@@ -282,6 +284,6 @@ class MultiProcessRedisBackend:
         else:
             value = self.CONNECTION_POOL.get(self._key_name)
 
-        self.CONNECTION_POOL.expire(self._key_name, EXPIRE_KEY_TIME)
+        self.CONNECTION_POOL.expire(self._key_name, self.EXPIRE_KEY_TIME)
 
         return float(value) if value else 0.0
