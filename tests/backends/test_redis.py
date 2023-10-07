@@ -489,6 +489,24 @@ class TestGenerateSamples:
             'summary_sum{bob="bobby"} 0.0\n'
         )
 
+    def test_labeled_not_observable(self):
+        registry = CollectorRegistry()
+        Counter("counter", "desc", required_labels=["bob"], registry=registry)
+        Gauge("gauge", "desc", required_labels=["bob"], registry=registry)
+        Summary("summary", "desc", required_labels=["bob"], registry=registry)
+        Histogram("histogram", "desc", required_labels=["bob"], registry=registry)
+        metrics_output = generate_metrics(registry)
+        assert metrics_output == (
+            "# HELP counter desc\n"
+            "# TYPE counter counter\n"
+            "# HELP gauge desc\n"
+            "# TYPE gauge gauge\n"
+            "# HELP summary desc\n"
+            "# TYPE summary summary\n"
+            "# HELP histogram desc\n"
+            "# TYPE histogram histogram\n"
+        )
+
 
 def test_set_expire_key_time():
     load_backend(MultiProcessRedisBackend, {"expire_key_time": 300})
