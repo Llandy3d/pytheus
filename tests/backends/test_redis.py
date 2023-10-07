@@ -1,4 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor
+from importlib.util import find_spec
 from unittest import mock
 
 import pytest
@@ -8,6 +9,10 @@ from pytheus.backends.redis import MultiProcessRedisBackend
 from pytheus.exposition import generate_metrics
 from pytheus.metrics import Counter, Gauge, Histogram, Sample, Summary
 from pytheus.registry import CollectorRegistry
+
+if not find_spec("redis"):
+    pytest.skip("skipping redis tests as the module was not found", allow_module_level=True)
+
 
 load_backend(MultiProcessRedisBackend)
 pool = MultiProcessRedisBackend.CONNECTION_POOL
