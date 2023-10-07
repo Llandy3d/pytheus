@@ -2,17 +2,15 @@ from concurrent.futures import ProcessPoolExecutor
 from unittest import mock
 
 import pytest
-from fakeredis import FakeStrictRedis
 
-from pytheus.backends import load_backend
+from pytheus.backends.base import SingleProcessBackend, load_backend
 from pytheus.backends.redis import MultiProcessRedisBackend
 from pytheus.exposition import generate_metrics
-from pytheus.metrics import Counter, Histogram
+from pytheus.metrics import Counter, Histogram, Sample
 from pytheus.registry import CollectorRegistry
 
-# patch with fakeredis for tests
-pool = FakeStrictRedis()
-MultiProcessRedisBackend.CONNECTION_POOL = pool
+load_backend(MultiProcessRedisBackend)
+pool = MultiProcessRedisBackend.CONNECTION_POOL
 
 
 # automatically clear the cache after every test function
@@ -147,18 +145,16 @@ def test_create_histogram_with_prefix(_mock_initialize):
     histogram_keys = pool.keys()
     assert len(histogram_keys) == 14
     for key in histogram_keys:
-        assert key.startswith(b"test-")
+        assert key.startswith("test-")
 
 
 # multiple metrics with same name tests, especially when sharing redis as a backend
 
 
-@mock.patch.object(MultiProcessRedisBackend, "_initialize")
-def test_multiple_metrics_with_same_name_with_redis_overlap(_mock_initialize):
+def test_multiple_metrics_with_same_name_with_redis_overlap():
     """
     If sharing the same database, single value metrics will be overlapping.
     """
-    load_backend(MultiProcessRedisBackend)
     first_collector = CollectorRegistry()
     second_collector = CollectorRegistry()
 
@@ -171,13 +167,11 @@ def test_multiple_metrics_with_same_name_with_redis_overlap(_mock_initialize):
     assert counter_b._metric_value_backend.get() == 1.0
 
 
-@mock.patch.object(MultiProcessRedisBackend, "_initialize")
-def test_multiple_metrics_with_same_name_labeled_with_redis_do_not_overlap(_mock_initialize):
+def test_multiple_metrics_with_same_name_labeled_with_redis_do_not_overlap():
     """
     Even while sharing the same database, labeled metrics won't be returned from collectors not
     having the specific child instance.
     """
-    load_backend(MultiProcessRedisBackend)
     first_collector = CollectorRegistry()
     second_collector = CollectorRegistry()
 
@@ -198,15 +192,11 @@ def test_multiple_metrics_with_same_name_labeled_with_redis_do_not_overlap(_mock
     assert second_collector_metrics_count == 1
 
 
-@mock.patch.object(MultiProcessRedisBackend, "_initialize")
-def test_multiple_metrics_with_same_name_labeled_with_redis_do_overlap_on_shared_child(
-    _mock_initialize,
-):
+def test_multiple_metrics_with_same_name_labeled_with_redis_do_overlap_on_shared_child():
     """
     If sharing the same database, labeled metrics will be returned from collectors if having the
     same child instance.
     """
-    load_backend(MultiProcessRedisBackend)
     first_collector = CollectorRegistry()
     second_collector = CollectorRegistry()
 
@@ -230,8 +220,7 @@ def test_multiple_metrics_with_same_name_labeled_with_redis_do_overlap_on_shared
     assert counter_b.labels({"bob": "cat"})._metric_value_backend.get() == 1
 
 
-@mock.patch.object(MultiProcessRedisBackend, "_initialize")
-def test_multiple_metrics_with_same_name_with_redis_key_prefix(_mock_initialize):
+def test_multiple_metrics_with_same_name_with_redis_key_prefix():
     first_collector = CollectorRegistry()
     second_collector = CollectorRegistry()
 
@@ -246,10 +235,7 @@ def test_multiple_metrics_with_same_name_with_redis_key_prefix(_mock_initialize)
     assert counter_b._metric_value_backend.get() == 0
 
 
-@mock.patch.object(MultiProcessRedisBackend, "_initialize")
-def test_multiple_metrics_with_same_name_labeled_with_redis_key_name_do_not_overlap_on_shared_child(
-    _mock_initialize,
-):
+def test_multiple_metrics_with_same_name_labeled_with_redis_key_name_dont_overlap_on_shared_child():
     first_collector = CollectorRegistry()
     second_collector = CollectorRegistry()
 
@@ -345,3 +331,16 @@ def test_sets_key_on_collector():
     counter = Counter("name", "desc")
     MultiProcessRedisBackend({}, counter)
     assert counter._collector._redis_key_name == "name"
+
+
+def test_generate_samples_counter():
+    registry = CollectorRegistry()
+    counter = Counter("counter", "desc", registry=registry)
+    expected_samples = {counter._collector: [Sample("", None, 0.0)]}
+
+    samples = MultiProcessRedisBackend._generate_samples(registry)
+    assert samples == expected_samples
+
+
+# reset to the SingleProcessBackend for other tests
+load_backend(SingleProcessBackend)
