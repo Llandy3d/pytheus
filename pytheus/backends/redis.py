@@ -112,44 +112,42 @@ class MultiProcessRedisBackend:
             key_name = collector._redis_key_name
             if collector._required_labels:
                 # hash
-                match collector.type_:
-                    case MetricType.COUNTER | MetricType.GAUGE:
-                        pipeline.expire(key_name, EXPIRE_KEY_TIME)
-                        pipeline.hgetall(key_name)
-                    case MetricType.SUMMARY:
-                        for suffix in ("count", "sum"):
-                            key_with_suffix = f"{key_name}:{suffix}"
-                            pipeline.expire(key_with_suffix, EXPIRE_KEY_TIME)
-                            pipeline.hgetall(key_with_suffix)
-                    case MetricType.HISTOGRAM:
-                        for suffix in collector._metric._upper_bounds[:-1] + [
-                            "+Inf",
-                            "count",
-                            "sum",
-                        ]:
-                            key_with_suffix = f"{key_name}:{suffix}"
-                            pipeline.expire(key_with_suffix, EXPIRE_KEY_TIME)
-                            pipeline.hgetall(key_with_suffix)
+                if collector.type_ in (MetricType.COUNTER, MetricType.GAUGE):
+                    pipeline.expire(key_name, EXPIRE_KEY_TIME)
+                    pipeline.hgetall(key_name)
+                elif collector.type_ == MetricType.SUMMARY:
+                    for suffix in ("count", "sum"):
+                        key_with_suffix = f"{key_name}:{suffix}"
+                        pipeline.expire(key_with_suffix, EXPIRE_KEY_TIME)
+                        pipeline.hgetall(key_with_suffix)
+                elif collector.type_ == MetricType.HISTOGRAM:
+                    for suffix in collector._metric._upper_bounds[:-1] + [
+                        "+Inf",
+                        "count",
+                        "sum",
+                    ]:
+                        key_with_suffix = f"{key_name}:{suffix}"
+                        pipeline.expire(key_with_suffix, EXPIRE_KEY_TIME)
+                        pipeline.hgetall(key_with_suffix)
             else:
                 # not hash
-                match collector.type_:
-                    case MetricType.COUNTER | MetricType.GAUGE:
-                        pipeline.expire(key_name, EXPIRE_KEY_TIME)
-                        pipeline.get(key_name)
-                    case MetricType.SUMMARY:
-                        for suffix in ("count", "sum"):
-                            key_with_suffix = f"{key_name}:{suffix}"
-                            pipeline.expire(key_with_suffix, EXPIRE_KEY_TIME)
-                            pipeline.get(key_with_suffix)
-                    case MetricType.HISTOGRAM:
-                        for suffix in collector._metric._upper_bounds[:-1] + [
-                            "+Inf",
-                            "count",
-                            "sum",
-                        ]:
-                            key_with_suffix = f"{key_name}:{suffix}"
-                            pipeline.expire(key_with_suffix, EXPIRE_KEY_TIME)
-                            pipeline.get(key_with_suffix)
+                if collector.type_ in (MetricType.COUNTER, MetricType.GAUGE):
+                    pipeline.expire(key_name, EXPIRE_KEY_TIME)
+                    pipeline.get(key_name)
+                elif collector.type_ == MetricType.SUMMARY:
+                    for suffix in ("count", "sum"):
+                        key_with_suffix = f"{key_name}:{suffix}"
+                        pipeline.expire(key_with_suffix, EXPIRE_KEY_TIME)
+                        pipeline.get(key_with_suffix)
+                elif collector.type_ == MetricType.HISTOGRAM:
+                    for suffix in collector._metric._upper_bounds[:-1] + [
+                        "+Inf",
+                        "count",
+                        "sum",
+                    ]:
+                        key_with_suffix = f"{key_name}:{suffix}"
+                        pipeline.expire(key_with_suffix, EXPIRE_KEY_TIME)
+                        pipeline.get(key_with_suffix)
 
         pipeline_data = pipeline.execute()
 
@@ -161,89 +159,87 @@ class MultiProcessRedisBackend:
         for collector, samples_list in samples_dict.items():
             if collector._required_labels:
                 # hash
-                match collector.type_:
-                    case MetricType.COUNTER | MetricType.GAUGE:
-                        values_dict = values[0]
-                        values = values[1:]
-                        for labels, value in values_dict.items():
-                            samples_list.append(Sample("", json.loads(labels), float(value)))
-                    case MetricType.SUMMARY:
-                        count_dict = values[0]
-                        sum_dict = values[1]
-                        values = values[2:]
-                        ordered_samples = defaultdict(list)
-                        for labels_str, value in count_dict.items():
-                            ordered_samples[labels_str].append(
-                                Sample("_count", json.loads(labels_str), float(value))
-                            )
+                if collector.type_ in (MetricType.COUNTER, MetricType.GAUGE):
+                    values_dict = values[0]
+                    values = values[1:]
+                    for labels, value in values_dict.items():
+                        samples_list.append(Sample("", json.loads(labels), float(value)))
+                elif collector.type_ == MetricType.SUMMARY:
+                    count_dict = values[0]
+                    sum_dict = values[1]
+                    values = values[2:]
+                    ordered_samples = defaultdict(list)
+                    for labels_str, value in count_dict.items():
+                        ordered_samples[labels_str].append(
+                            Sample("_count", json.loads(labels_str), float(value))
+                        )
 
-                        for labels_str, value in sum_dict.items():
-                            ordered_samples[labels_str].append(
-                                Sample("_sum", json.loads(labels_str), float(value))
-                            )
+                    for labels_str, value in sum_dict.items():
+                        ordered_samples[labels_str].append(
+                            Sample("_sum", json.loads(labels_str), float(value))
+                        )
 
-                        for ordered_sample_list in ordered_samples.values():
-                            samples_list.extend(ordered_sample_list)
+                    for ordered_sample_list in ordered_samples.values():
+                        samples_list.extend(ordered_sample_list)
 
-                    case MetricType.HISTOGRAM:
-                        index = 0
-                        suffixes = collector._metric._upper_bounds[:-1] + ["+Inf", "count", "sum"]
-                        # for exposition we want to maintain order based on increasing le values
-                        ordered_samples = defaultdict(list)
-                        for suffix in suffixes:
-                            values_dict = values[index]
-                            index += 1
+                elif collector.type_ == MetricType.HISTOGRAM:
+                    index = 0
+                    suffixes = collector._metric._upper_bounds[:-1] + ["+Inf", "count", "sum"]
+                    # for exposition we want to maintain order based on increasing le values
+                    ordered_samples = defaultdict(list)
+                    for suffix in suffixes:
+                        values_dict = values[index]
+                        index += 1
 
-                            if isinstance(suffix, (int, float)) or suffix == "+Inf":
-                                for labels_str, value in values_dict.items():
-                                    labels = json.loads(labels_str)
-                                    labels["le"] = str(suffix)
-                                    ordered_samples[labels_str].append(
-                                        Sample("_bucket", labels, float(value))
-                                    )
-                            elif suffix == "count":
-                                for labels_str, value in values_dict.items():
-                                    ordered_samples[labels_str].append(
-                                        Sample("_count", json.loads(labels_str), float(value))
-                                    )
-                            elif suffix == "sum":
-                                for labels_str, value in values_dict.items():
-                                    ordered_samples[labels_str].append(
-                                        Sample("_sum", json.loads(labels_str), float(value))
-                                    )
+                        if isinstance(suffix, (int, float)) or suffix == "+Inf":
+                            for labels_str, value in values_dict.items():
+                                labels = json.loads(labels_str)
+                                labels["le"] = str(suffix)
+                                ordered_samples[labels_str].append(
+                                    Sample("_bucket", labels, float(value))
+                                )
+                        elif suffix == "count":
+                            for labels_str, value in values_dict.items():
+                                ordered_samples[labels_str].append(
+                                    Sample("_count", json.loads(labels_str), float(value))
+                                )
+                        elif suffix == "sum":
+                            for labels_str, value in values_dict.items():
+                                ordered_samples[labels_str].append(
+                                    Sample("_sum", json.loads(labels_str), float(value))
+                                )
 
-                        for ordered_sample_list in ordered_samples.values():
-                            samples_list.extend(ordered_sample_list)
+                    for ordered_sample_list in ordered_samples.values():
+                        samples_list.extend(ordered_sample_list)
 
-                        values = values[len(suffixes) :]
+                    values = values[len(suffixes) :]
             else:
-                match collector.type_:
-                    case MetricType.COUNTER | MetricType.GAUGE:
-                        value = values[0]
-                        values = values[1:]
-                        samples_list.append(Sample("", None, float(value)))
-                    case MetricType.SUMMARY:
-                        count_value = values[0]
-                        sum_value = values[1]
-                        values = values[2:]
-                        samples_list.append(Sample("_count", None, float(count_value)))
-                        samples_list.append(Sample("_sum", None, float(sum_value)))
-                    case MetricType.HISTOGRAM:
-                        index = 0
-                        suffixes = collector._metric._upper_bounds[:-1] + ["+Inf", "count", "sum"]
-                        for suffix in suffixes:
-                            value = values[index]
-                            index += 1
+                if collector.type_ in (MetricType.COUNTER, MetricType.GAUGE):
+                    value = values[0]
+                    values = values[1:]
+                    samples_list.append(Sample("", None, float(value)))
+                elif collector.type_ == MetricType.SUMMARY:
+                    count_value = values[0]
+                    sum_value = values[1]
+                    values = values[2:]
+                    samples_list.append(Sample("_count", None, float(count_value)))
+                    samples_list.append(Sample("_sum", None, float(sum_value)))
+                elif collector.type_ == MetricType.HISTOGRAM:
+                    index = 0
+                    suffixes = collector._metric._upper_bounds[:-1] + ["+Inf", "count", "sum"]
+                    for suffix in suffixes:
+                        value = values[index]
+                        index += 1
 
-                            if isinstance(suffix, (int, float)) or suffix == "+Inf":
-                                labels = {"le": str(suffix)}
-                                samples_list.append(Sample("_bucket", labels, float(value)))
-                            elif suffix == "count":
-                                samples_list.append(Sample("_count", None, float(value)))
-                            elif suffix == "sum":
-                                samples_list.append(Sample("_sum", None, float(value)))
+                        if isinstance(suffix, (int, float)) or suffix == "+Inf":
+                            labels = {"le": str(suffix)}
+                            samples_list.append(Sample("_bucket", labels, float(value)))
+                        elif suffix == "count":
+                            samples_list.append(Sample("_count", None, float(value)))
+                        elif suffix == "sum":
+                            samples_list.append(Sample("_sum", None, float(value)))
 
-                        values = values[len(suffixes) :]
+                    values = values[len(suffixes) :]
 
         return samples_dict
 
