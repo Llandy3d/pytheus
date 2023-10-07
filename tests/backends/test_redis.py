@@ -6,7 +6,7 @@ import pytest
 from pytheus.backends.base import SingleProcessBackend, load_backend
 from pytheus.backends.redis import MultiProcessRedisBackend
 from pytheus.exposition import generate_metrics
-from pytheus.metrics import Counter, Histogram, Sample
+from pytheus.metrics import Counter, Gauge, Histogram, Sample, Summary
 from pytheus.registry import CollectorRegistry
 
 load_backend(MultiProcessRedisBackend)
@@ -333,13 +333,127 @@ def test_sets_key_on_collector():
     assert counter._collector._redis_key_name == "name"
 
 
-def test_generate_samples_counter():
-    registry = CollectorRegistry()
-    counter = Counter("counter", "desc", registry=registry)
-    expected_samples = {counter._collector: [Sample("", None, 0.0)]}
+class TestGenerateSamples:
+    def test_counter(self):
+        registry = CollectorRegistry()
+        counter = Counter("counter", "desc", registry=registry)
+        expected_samples = {counter._collector: [Sample("", None, 0.0)]}
 
-    samples = MultiProcessRedisBackend._generate_samples(registry)
-    assert samples == expected_samples
+        samples = MultiProcessRedisBackend._generate_samples(registry)
+        assert samples == expected_samples
+
+    def test_counter_labeled(self):
+        registry = CollectorRegistry()
+        counter = Counter("counter", "desc", required_labels=["bob"], registry=registry)
+        counter.labels(bob="cat").inc(2.7)
+        expected_samples = {counter._collector: [Sample("", {"bob": "cat"}, 2.7)]}
+
+        samples = MultiProcessRedisBackend._generate_samples(registry)
+        assert samples == expected_samples
+
+    def test_gauge(self):
+        registry = CollectorRegistry()
+        gauge = Gauge("gauge", "desc", registry=registry)
+        expected_samples = {gauge._collector: [Sample("", None, 0.0)]}
+
+        samples = MultiProcessRedisBackend._generate_samples(registry)
+        assert samples == expected_samples
+
+    def test_gauge_labeled(self):
+        registry = CollectorRegistry()
+        gauge = Gauge("gauge", "desc", required_labels=["bob"], registry=registry)
+        gauge.labels(bob="cat").inc(2.7)
+        expected_samples = {gauge._collector: [Sample("", {"bob": "cat"}, 2.7)]}
+
+        samples = MultiProcessRedisBackend._generate_samples(registry)
+        assert samples == expected_samples
+
+    def test_metric_labeled_multiple(self):
+        registry = CollectorRegistry()
+        counter_labeled = Counter(
+            "counter_labeled", "desc", required_labels=["bob"], registry=registry
+        )
+        counter_labeled.labels(bob="cat").inc(2.7)
+        gauge = Gauge("gauge", "desc", required_labels=["bob"], registry=registry)
+        gauge.labels(bob="gage").inc(3.0)
+        gauge.labels(bob="blob").inc(3.2)
+        counter = Counter("counter", "desc", registry=registry)
+        expected_samples = {
+            counter_labeled._collector: [Sample("", {"bob": "cat"}, 2.7)],
+            gauge._collector: [Sample("", {"bob": "gage"}, 3.0), Sample("", {"bob": "blob"}, 3.2)],
+            counter._collector: [Sample("", None, 0.0)],
+        }
+
+        samples = MultiProcessRedisBackend._generate_samples(registry)
+        assert samples == expected_samples
+
+    def test_summary(self):
+        registry = CollectorRegistry()
+        summary = Summary("summary", "desc", registry=registry)
+        expected_samples = {
+            summary._collector: [Sample("_count", None, 0.0), Sample("_sum", None, 0.0)],
+        }
+
+        samples = MultiProcessRedisBackend._generate_samples(registry)
+        assert samples == expected_samples
+
+    def test_summary_labeled(self):
+        registry = CollectorRegistry()
+        summary = Summary(
+            "summary",
+            "desc",
+            registry=registry,
+            required_labels=["bob"],
+            default_labels={"bob": "cat"},
+        )
+        summary.observe(7)
+        expected_samples = {
+            summary._collector: [
+                Sample("_count", {"bob": "cat"}, 1.0),
+                Sample("_sum", {"bob": "cat"}, 7.0),
+            ],
+        }
+
+        samples = MultiProcessRedisBackend._generate_samples(registry)
+        assert samples == expected_samples
+
+    def test_histogram(self):
+        registry = CollectorRegistry()
+        histogram = Histogram("histogram", "desc", buckets=[1, 2, 3], registry=registry)
+        histogram.observe(2.7)
+        expected_samples = {
+            histogram._collector: [
+                Sample("_bucket", {"le": "1"}, 0.0),
+                Sample("_bucket", {"le": "2"}, 0.0),
+                Sample("_bucket", {"le": "3"}, 1.0),
+                Sample("_bucket", {"le": "+Inf"}, 1.0),
+                Sample("_count", None, 1.0),
+                Sample("_sum", None, 2.7),
+            ],
+        }
+
+        samples = MultiProcessRedisBackend._generate_samples(registry)
+        assert samples == expected_samples
+
+    def test_histogram_labeled(self):
+        registry = CollectorRegistry()
+        histogram = Histogram(
+            "histogram", "desc", buckets=[1, 2, 3], required_labels=["bob"], registry=registry
+        )
+        histogram.labels(bob="cat").observe(2.7)
+        expected_samples = {
+            histogram._collector: [
+                Sample("_bucket", {"bob": "cat", "le": "1"}, 0.0),
+                Sample("_bucket", {"bob": "cat", "le": "2"}, 0.0),
+                Sample("_bucket", {"bob": "cat", "le": "3"}, 1.0),
+                Sample("_bucket", {"bob": "cat", "le": "+Inf"}, 1.0),
+                Sample("_count", {"bob": "cat"}, 1.0),
+                Sample("_sum", {"bob": "cat"}, 2.7),
+            ],
+        }
+
+        samples = MultiProcessRedisBackend._generate_samples(registry)
+        assert samples == expected_samples
 
 
 # reset to the SingleProcessBackend for other tests
