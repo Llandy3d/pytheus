@@ -302,8 +302,10 @@ def _run_multiprocess(extra_label):
     registry = CollectorRegistry()
     counter = Counter("name_multiple", "desc", required_labels=["bob"], registry=registry)
     counter.labels(bob="cat")
+    gauge = Gauge("gauge_multiple", "desc", required_labels=["bob"], registry=registry)
     if extra_label:
         counter.labels(bob="created_only_on_one").inc(3.0)
+        gauge.labels(bob="observable_only_on_one").inc(2.7)
     return generate_metrics(registry)
 
 

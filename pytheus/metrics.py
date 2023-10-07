@@ -88,6 +88,9 @@ class _MetricCollector:
         self._registry = registry
         self._redis_key_name: Optional[str] = None
 
+        if metric.type_ in (MetricType.COUNTER, MetricType.GAUGE):
+            self._redis_key_name = name
+
         if registry:
             registry.register(self)
 

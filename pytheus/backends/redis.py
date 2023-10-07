@@ -113,10 +113,6 @@ class MultiProcessRedisBackend:
 
             key_name = collector._redis_key_name
 
-            # means that the metric is not observable so we don't need to query for data
-            if not key_name:
-                continue
-
             if collector._required_labels:
                 # hash
                 if collector.type_ in (MetricType.COUNTER, MetricType.GAUGE):
@@ -164,10 +160,6 @@ class MultiProcessRedisBackend:
 
         # build samples
         for collector, samples_list in samples_dict.items():
-            # means that the metric is not observable so we don't have samples
-            if not collector._redis_key_name:
-                continue
-
             if collector._required_labels:
                 # hash
                 if collector.type_ in (MetricType.COUNTER, MetricType.GAUGE):
