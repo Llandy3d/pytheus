@@ -1,3 +1,4 @@
+from concurrent.futures import ProcessPoolExecutor
 from unittest import mock
 
 import pytest
@@ -5,6 +6,7 @@ from fakeredis import FakeStrictRedis
 
 from pytheus.backends import load_backend
 from pytheus.backends.redis import MultiProcessRedisBackend
+from pytheus.exposition import generate_metrics
 from pytheus.metrics import Counter, Histogram
 from pytheus.registry import CollectorRegistry
 
@@ -26,7 +28,7 @@ def clear_redis():
         MultiProcessRedisBackend(
             {},
             Counter(
-                "name",
+                "name_labels",
                 "desc",
                 required_labels=["bob"],
                 default_labels={"bob": "cat"},
@@ -87,7 +89,7 @@ def test_create_backend_labeled():
 
     assert backend._key_name == counter.name
     assert backend._histogram_bucket is None
-    assert backend._labels_hash == "cat"
+    assert backend._labels_hash == '{"bob": "cat"}'
     assert pool.hexists(backend._key_name, backend._labels_hash)
 
 
@@ -98,7 +100,7 @@ def test_create_backend_labeled_with_prefix():
 
     assert backend._key_name == f"test-{counter.name}"
     assert backend._histogram_bucket is None
-    assert backend._labels_hash == "cat"
+    assert backend._labels_hash == '{"bob": "cat"}'
     assert pool.hexists(backend._key_name, backend._labels_hash)
 
 
@@ -108,7 +110,7 @@ def test_create_backend_labeled_with_default():
 
     assert backend._key_name == counter.name
     assert backend._histogram_bucket is None
-    assert backend._labels_hash == "cat"
+    assert backend._labels_hash == '{"bob": "cat"}'
     assert pool.hexists(backend._key_name, backend._labels_hash)
 
 
@@ -121,7 +123,7 @@ def test_create_backend_labeled_with_default_mixed():
 
     assert backend._key_name == counter.name
     assert backend._histogram_bucket is None
-    assert backend._labels_hash == "cat-fish"
+    assert backend._labels_hash == '{"bob": "cat", "bobby": "fish"}'
     assert pool.hexists(backend._key_name, backend._labels_hash)
 
 
@@ -301,6 +303,7 @@ def test_generate_samples():
 
 
 def test_generate_samples_with_labels():
+    load_backend(MultiProcessRedisBackend)
     registry = CollectorRegistry()
     counter = Counter(
         "name", "desc", required_labels=["bob"], default_labels={"bob": "c"}, registry=registry
@@ -309,3 +312,36 @@ def test_generate_samples_with_labels():
     counter.labels({"bob": "b"})
     samples = MultiProcessRedisBackend._generate_samples(registry)
     assert len(samples[counter._collector]) == 3
+
+
+def _run_multiprocess(extra_label):
+    load_backend(
+        backend_class=MultiProcessRedisBackend,
+        # backend_config={"host": "127.0.0.1", "port": 6379},
+    )
+    registry = CollectorRegistry()
+    counter = Counter("name_multiple", "desc", required_labels=["bob"], registry=registry)
+    counter.labels(bob="cat")
+    if extra_label:
+        counter.labels(bob="created_only_on_one").inc(3.0)
+    return generate_metrics(registry)
+
+
+def test_multiple_return_all_metrics_entries():
+    """
+    Test that if a metric labeled child is created on a process, it will be retrieved even if the
+    instance doesn't exist on a different process.
+    """
+    with ProcessPoolExecutor() as executor:
+        first_result = executor.submit(_run_multiprocess, extra_label=True)
+        first_result = first_result.result()
+        second_result = executor.submit(_run_multiprocess, extra_label=False)
+        second_result = second_result.result()
+
+        assert first_result == second_result
+
+
+def test_sets_key_on_collector():
+    counter = Counter("name", "desc")
+    MultiProcessRedisBackend({}, counter)
+    assert counter._collector._redis_key_name == "name"
