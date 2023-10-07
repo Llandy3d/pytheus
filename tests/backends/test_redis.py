@@ -13,6 +13,13 @@ load_backend(MultiProcessRedisBackend)
 pool = MultiProcessRedisBackend.CONNECTION_POOL
 
 
+# when running a single test might not be picking up the backend so
+# we enforce it
+@pytest.fixture(autouse=True)
+def load_redis_backend():
+    load_backend(MultiProcessRedisBackend)
+
+
 # automatically clear the cache after every test function
 @pytest.fixture(autouse=True)
 def clear_redis():
@@ -436,6 +443,46 @@ class TestGenerateSamples:
 
         samples = MultiProcessRedisBackend._generate_samples(registry)
         assert samples == expected_samples
+
+    def test_labeled_histogram_is_ordered(self):
+        registry = CollectorRegistry()
+        histogram = Histogram(
+            "histogram", "desc", buckets=[1, 2, 3], required_labels=["bob"], registry=registry
+        )
+        histogram.labels(bob="cat")
+        histogram.labels(bob="bobby")
+        metrics_output = generate_metrics(registry)
+        assert metrics_output == (
+            "# HELP histogram desc\n"
+            "# TYPE histogram histogram\n"
+            'histogram_bucket{bob="cat",le="1"} 0.0\n'
+            'histogram_bucket{bob="cat",le="2"} 0.0\n'
+            'histogram_bucket{bob="cat",le="3"} 0.0\n'
+            'histogram_bucket{bob="cat",le="+Inf"} 0.0\n'
+            'histogram_count{bob="cat"} 0.0\n'
+            'histogram_sum{bob="cat"} 0.0\n'
+            'histogram_bucket{bob="bobby",le="1"} 0.0\n'
+            'histogram_bucket{bob="bobby",le="2"} 0.0\n'
+            'histogram_bucket{bob="bobby",le="3"} 0.0\n'
+            'histogram_bucket{bob="bobby",le="+Inf"} 0.0\n'
+            'histogram_count{bob="bobby"} 0.0\n'
+            'histogram_sum{bob="bobby"} 0.0\n'
+        )
+
+    def test_labeled_summary_is_ordered(self):
+        registry = CollectorRegistry()
+        summary = Summary("summary", "desc", required_labels=["bob"], registry=registry)
+        summary.labels(bob="cat")
+        summary.labels(bob="bobby")
+        metrics_output = generate_metrics(registry)
+        assert metrics_output == (
+            "# HELP summary desc\n"
+            "# TYPE summary summary\n"
+            'summary_count{bob="cat"} 0.0\n'
+            'summary_sum{bob="cat"} 0.0\n'
+            'summary_count{bob="bobby"} 0.0\n'
+            'summary_sum{bob="bobby"} 0.0\n'
+        )
 
 
 # reset to the SingleProcessBackend for other tests

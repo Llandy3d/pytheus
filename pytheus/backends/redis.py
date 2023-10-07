@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 import redis
@@ -171,47 +172,49 @@ class MultiProcessRedisBackend:
                         count_dict = values[0]
                         sum_dict = values[1]
                         values = values[2:]
-                        for labels, value in count_dict.items():
-                            samples_list.append(Sample("_count", json.loads(labels), float(value)))
+                        ordered_samples = defaultdict(list)
+                        for labels_str, value in count_dict.items():
+                            ordered_samples[labels_str].append(
+                                Sample("_count", json.loads(labels_str), float(value))
+                            )
 
-                        for labels, value in sum_dict.items():
-                            samples_list.append(Sample("_sum", json.loads(labels), float(value)))
+                        for labels_str, value in sum_dict.items():
+                            ordered_samples[labels_str].append(
+                                Sample("_sum", json.loads(labels_str), float(value))
+                            )
 
-                        # might be able to do something like this for order but is it safe ?
-                        # count_dict = values[0]
-                        # sum_dict = values[1]
-                        # values = values[2:]
-                        # for (labels_count, value_count),(labels_sum, value_sum)  in
-                        # zip(count_dict.items(), sum_dict.items()):
-                        #
-                        #     samples_list.append(
-                        #         Sample("_count", json.loads(labels_count), float(value_count))
-                        #     )
-                        #     samples_list.append(
-                        #        Sample("_sum", json.loads(labels_sum), float(value_sum))
-                        #    )
+                        for ordered_sample_list in ordered_samples.values():
+                            samples_list.extend(ordered_sample_list)
+
                     case MetricType.HISTOGRAM:
                         index = 0
                         suffixes = collector._metric._upper_bounds[:-1] + ["+Inf", "count", "sum"]
+                        # for exposition we want to maintain order based on increasing le values
+                        ordered_samples = defaultdict(list)
                         for suffix in suffixes:
                             values_dict = values[index]
                             index += 1
 
                             if isinstance(suffix, (int, float)) or suffix == "+Inf":
-                                for labels, value in values_dict.items():
-                                    labels = json.loads(labels)
+                                for labels_str, value in values_dict.items():
+                                    labels = json.loads(labels_str)
                                     labels["le"] = str(suffix)
-                                    samples_list.append(Sample("_bucket", labels, float(value)))
+                                    ordered_samples[labels_str].append(
+                                        Sample("_bucket", labels, float(value))
+                                    )
                             elif suffix == "count":
-                                for labels, value in values_dict.items():
-                                    samples_list.append(
-                                        Sample("_count", json.loads(labels), float(value))
+                                for labels_str, value in values_dict.items():
+                                    ordered_samples[labels_str].append(
+                                        Sample("_count", json.loads(labels_str), float(value))
                                     )
                             elif suffix == "sum":
-                                for labels, value in values_dict.items():
-                                    samples_list.append(
-                                        Sample("_sum", json.loads(labels), float(value))
+                                for labels_str, value in values_dict.items():
+                                    ordered_samples[labels_str].append(
+                                        Sample("_sum", json.loads(labels_str), float(value))
                                     )
+
+                        for ordered_sample_list in ordered_samples.values():
+                            samples_list.extend(ordered_sample_list)
 
                         values = values[len(suffixes) :]
             else:
