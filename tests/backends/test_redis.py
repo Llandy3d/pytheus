@@ -303,9 +303,13 @@ def _run_multiprocess(extra_label):
     counter = Counter("name_multiple", "desc", required_labels=["bob"], registry=registry)
     counter.labels(bob="cat")
     gauge = Gauge("gauge_multiple", "desc", required_labels=["bob"], registry=registry)
+    summary = Summary("summary_multiple", "desc", required_labels=["bob"], registry=registry)
+    histogram = Histogram("histogram_multiple", "desc", required_labels=["bob"], registry=registry)
     if extra_label:
         counter.labels(bob="created_only_on_one").inc(3.0)
         gauge.labels(bob="observable_only_on_one").inc(2.7)
+        summary.labels(bob="observable_only_on_one").observe(2.7)
+        histogram.labels(bob="observable_only_on_one").observe(2.7)
     return generate_metrics(registry)
 
 
@@ -321,12 +325,6 @@ def test_multiple_return_all_metrics_entries():
         second_result = second_result.result()
 
         assert first_result == second_result
-
-
-def test_sets_key_on_collector():
-    counter = Counter("name", "desc")
-    MultiProcessRedisBackend({}, counter)
-    assert counter._collector._redis_key_name == "name"
 
 
 class TestGenerateSamples:

@@ -40,9 +40,6 @@ class MultiProcessRedisBackend:
             else None
         )
 
-        if not metric._collector._redis_key_name:
-            metric._collector._redis_key_name = self._key_name
-
         # keys for histograms are of type `myhisto:2.5`
         if histogram_bucket:
             self._key_name = f"{self._key_name}:{histogram_bucket}"
@@ -59,6 +56,7 @@ class MultiProcessRedisBackend:
         elif metric._labels:
             self._labels_hash = json.dumps(metric._labels)
 
+        # NOTE: deprecated
         if "key_prefix" in config:
             self._key_prefix = config["key_prefix"]
             self._key_name = f"{self._key_prefix}-{self._key_name}"
@@ -111,7 +109,7 @@ class MultiProcessRedisBackend:
             samples_list: List[Sample] = []
             samples_dict[collector] = samples_list
 
-            key_name = collector._redis_key_name
+            key_name = collector.name
 
             if collector._required_labels:
                 # hash
