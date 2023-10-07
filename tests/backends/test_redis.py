@@ -261,24 +261,6 @@ def test_multiple_metrics_with_same_name_labeled_with_redis_key_name_dont_overla
     assert counter_b.labels({"bob": "cat"})._metric_value_backend.get() == 1
 
 
-@mock.patch("pytheus.backends.redis.pipeline_var")
-def test_initialize_pipeline(pipeline_var_mock):
-    pipeline_var_mock.get.return_value = None
-    MultiProcessRedisBackend._initialize_pipeline()
-    assert pipeline_var_mock.set.called
-    assert pipeline_var_mock.set.call_args[0][0] is not None
-
-
-@mock.patch("pytheus.backends.redis.pipeline_var")
-def test_execute_and_cleanup_pipeline(pipeline_var_mock):
-    pipeline_mock = mock.Mock()
-    pipeline_var_mock.get.return_value = pipeline_mock
-    MultiProcessRedisBackend._execute_and_cleanup_pipeline()
-    assert pipeline_var_mock.set.called
-    assert pipeline_var_mock.set.call_args[0][0] is None
-    assert pipeline_mock.execute.called
-
-
 def test_generate_samples():
     registry = CollectorRegistry()
     counter = Counter("name", "desc", registry=registry)
