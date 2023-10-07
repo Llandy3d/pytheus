@@ -100,7 +100,6 @@ class MultiProcessRedisBackend:
 
     @classmethod
     def _generate_samples(cls, registry: "Registry") -> Dict["Collector", List["Sample"]]:
-        # cls._initialize_pipeline()
         assert cls.CONNECTION_POOL is not None
 
         # collect samples that are not yet stored with the value
