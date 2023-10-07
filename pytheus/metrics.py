@@ -86,6 +86,7 @@ class _MetricCollector:
         self._metric = metric
         self._labeled_metrics: Dict[Tuple[str, ...], _Metric] = {}
         self._registry = registry
+        self._redis_key_name: Optional[str] = None
 
         if registry:
             registry.register(self)
