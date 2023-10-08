@@ -16,10 +16,6 @@ from pytheus.experimental.adapters import (
 from pytheus.exposition import generate_metrics
 from pytheus.registry import REGISTRY, CollectorRegistry
 
-# CounterMetricFamily ???
-
-# exposition.MetricsHandler needs patching on .registry ??
-
 patches = {
     # registry
     "REGISTRY": REGISTRY,

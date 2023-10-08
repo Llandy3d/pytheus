@@ -29,7 +29,6 @@ test = [
   "black == 23.3.0",
   "isort == 5.12.0",
   "tox == 4.4.11",
-  "prometheus_client == 0.17.1",
 
   # mypy types
   "types-redis == 4.5.4.0",
@@ -37,6 +36,10 @@ test = [
 
 redis = [
   "redis >= 4.0.0",
+]
+
+prometheus_client = [
+  "prometheus_client >= 0.17.1",
 ]
 
 docs = [

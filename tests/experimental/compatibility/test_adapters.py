@@ -1,5 +1,11 @@
-import prometheus_client
+from importlib.util import find_spec
+
 import pytest
+
+if not find_spec("prometheus_client"):
+    pytest.skip("skipping redis tests as the module was not found", allow_module_level=True)
+
+import prometheus_client
 
 from pytheus.backends.base import load_backend
 from pytheus.experimental.adapters import HistogramAdapter, _build_name
