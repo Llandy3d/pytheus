@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- New improved implementation of `_generate_samples` for `MultiProcessRedisBackend`:
+    - Improved performance for generating metrics
+    - Fixed a bug where on multiprocess on some scrapes a metric wouldn't be picked up due to missing local collector child
+    - Now on labeled metrics, the labels/value combination will be initialized to 0 if it doesn't exists (before only the key would be initialized)
+
+- Redis keys expire time can now be configured via the `expire_key_time` config passed when loading the backend
+
+- Experimental `prometheus_client` patching in-place to quickly test the library on existing codebases
+
+- **DEPRECATED**: `key_prefix` for redis configuration. Prefer a side-car container or a separate redis/redis db per service.
+
 ## 0.4.0
 
 - python 3.12 support
