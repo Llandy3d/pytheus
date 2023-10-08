@@ -38,6 +38,10 @@ redis = [
   "redis >= 4.0.0",
 ]
 
+prometheus_client = [
+  "prometheus_client >= 0.17.1",
+]
+
 docs = [
     "mkdocs == 1.4.2",
     "mkdocs-material == 9.1.5",
