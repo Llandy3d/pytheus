@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.5.0
+
 - New improved implementation of `_generate_samples` for `MultiProcessRedisBackend`:
     - Improved performance for generating metrics
     - Fixed a bug where on multiprocess on some scrapes a metric wouldn't be picked up due to missing local collector child
