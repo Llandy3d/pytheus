@@ -459,3 +459,22 @@ To achieve that you can use the class method hook called `_initialize` that acce
 def _initialize(cls, config: "BackendConfig") -> None:
     # initialization steps
 ```
+
+### Client patching
+
+An **highly experimental** feature is to patch in-place the official `prometheus_client` so that you can test out the multiprocessing mode of this library without committing to it or just to try it out.
+
+```python
+import prometheus_client
+from pytheus.experimental.compatibility import patch_client
+
+patch_client(prometheus_client)
+```
+
+This has to be done at the start/initialization of your application and you can load a different backend before applying with patch with `patch_client` by using `load_backend`.
+
+This supports all the metrics types `Counter`, `Gauge`, `Summary` & `Histogram`. It supports the default `REGISTRY` and `generate_latest`. It also works with the `start_http_server` function.
+
+Of course it's extremely limited and you might be using a feature that is not yet supported, but feel free to try! :)
+
+(This was used to test an internal library without having to migrate all of it, so since I worked on it might as well share it! )
