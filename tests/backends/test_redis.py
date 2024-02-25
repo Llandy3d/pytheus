@@ -7,7 +7,7 @@ import pytest
 from pytheus.backends.base import SingleProcessBackend, load_backend
 from pytheus.backends.redis import MultiProcessRedisBackend
 from pytheus.exposition import generate_metrics
-from pytheus.metrics import Counter, Gauge, Histogram, Sample, Summary
+from pytheus.metrics import Counter, Gauge, Histogram, Summary
 from pytheus.registry import CollectorRegistry
 
 if not find_spec("redis"):
@@ -330,37 +330,39 @@ def test_multiple_return_all_metrics_entries():
 class TestGenerateSamples:
     def test_counter(self):
         registry = CollectorRegistry()
-        counter = Counter("counter", "desc", registry=registry)
-        expected_samples = {counter._collector: [Sample("", None, 0.0)]}
+        Counter("counter", "desc", registry=registry)
 
-        samples = MultiProcessRedisBackend._generate_samples(registry)
-        assert samples == expected_samples
+        metrics_output = generate_metrics(registry)
+        assert metrics_output == (
+            "# HELP counter desc\n" "# TYPE counter counter\n" "counter 0.0\n"
+        )
 
     def test_counter_labeled(self):
         registry = CollectorRegistry()
         counter = Counter("counter", "desc", required_labels=["bob"], registry=registry)
         counter.labels(bob="cat").inc(2.7)
-        expected_samples = {counter._collector: [Sample("", {"bob": "cat"}, 2.7)]}
 
-        samples = MultiProcessRedisBackend._generate_samples(registry)
-        assert samples == expected_samples
+        metrics_output = generate_metrics(registry)
+        assert metrics_output == (
+            "# HELP counter desc\n" "# TYPE counter counter\n" 'counter{bob="cat"} 2.7\n'
+        )
 
     def test_gauge(self):
         registry = CollectorRegistry()
-        gauge = Gauge("gauge", "desc", registry=registry)
-        expected_samples = {gauge._collector: [Sample("", None, 0.0)]}
+        Gauge("gauge", "desc", registry=registry)
 
-        samples = MultiProcessRedisBackend._generate_samples(registry)
-        assert samples == expected_samples
+        metrics_output = generate_metrics(registry)
+        assert metrics_output == ("# HELP gauge desc\n" "# TYPE gauge gauge\n" "gauge 0.0\n")
 
     def test_gauge_labeled(self):
         registry = CollectorRegistry()
         gauge = Gauge("gauge", "desc", required_labels=["bob"], registry=registry)
         gauge.labels(bob="cat").inc(2.7)
-        expected_samples = {gauge._collector: [Sample("", {"bob": "cat"}, 2.7)]}
 
-        samples = MultiProcessRedisBackend._generate_samples(registry)
-        assert samples == expected_samples
+        metrics_output = generate_metrics(registry)
+        assert metrics_output == (
+            "# HELP gauge desc\n" "# TYPE gauge gauge\n" 'gauge{bob="cat"} 2.7\n'
+        )
 
     def test_metric_labeled_multiple(self):
         registry = CollectorRegistry()
@@ -371,25 +373,33 @@ class TestGenerateSamples:
         gauge = Gauge("gauge", "desc", required_labels=["bob"], registry=registry)
         gauge.labels(bob="gage").inc(3.0)
         gauge.labels(bob="blob").inc(3.2)
-        counter = Counter("counter", "desc", registry=registry)
-        expected_samples = {
-            counter_labeled._collector: [Sample("", {"bob": "cat"}, 2.7)],
-            gauge._collector: [Sample("", {"bob": "gage"}, 3.0), Sample("", {"bob": "blob"}, 3.2)],
-            counter._collector: [Sample("", None, 0.0)],
-        }
+        Counter("counter", "desc", registry=registry)
 
-        samples = MultiProcessRedisBackend._generate_samples(registry)
-        assert samples == expected_samples
+        metrics_output = generate_metrics(registry)
+        assert metrics_output == (
+            "# HELP counter_labeled desc\n"
+            "# TYPE counter_labeled counter\n"
+            'counter_labeled{bob="cat"} 2.7\n'
+            "# HELP gauge desc\n"
+            "# TYPE gauge gauge\n"
+            'gauge{bob="gage"} 3.0\n'
+            'gauge{bob="blob"} 3.2\n'
+            "# HELP counter desc\n"
+            "# TYPE counter counter\n"
+            "counter 0.0\n"
+        )
 
     def test_summary(self):
         registry = CollectorRegistry()
-        summary = Summary("summary", "desc", registry=registry)
-        expected_samples = {
-            summary._collector: [Sample("_count", None, 0.0), Sample("_sum", None, 0.0)],
-        }
+        Summary("summary", "desc", registry=registry)
 
-        samples = MultiProcessRedisBackend._generate_samples(registry)
-        assert samples == expected_samples
+        metrics_output = generate_metrics(registry)
+        assert metrics_output == (
+            "# HELP summary desc\n"
+            "# TYPE summary summary\n"
+            "summary_count 0.0\n"
+            "summary_sum 0.0\n"
+        )
 
     def test_summary_labeled(self):
         registry = CollectorRegistry()
@@ -401,33 +411,31 @@ class TestGenerateSamples:
             default_labels={"bob": "cat"},
         )
         summary.observe(7)
-        expected_samples = {
-            summary._collector: [
-                Sample("_count", {"bob": "cat"}, 1.0),
-                Sample("_sum", {"bob": "cat"}, 7.0),
-            ],
-        }
 
-        samples = MultiProcessRedisBackend._generate_samples(registry)
-        assert samples == expected_samples
+        metrics_output = generate_metrics(registry)
+        assert metrics_output == (
+            "# HELP summary desc\n"
+            "# TYPE summary summary\n"
+            'summary_count{bob="cat"} 1.0\n'
+            'summary_sum{bob="cat"} 7.0\n'
+        )
 
     def test_histogram(self):
         registry = CollectorRegistry()
         histogram = Histogram("histogram", "desc", buckets=[1, 2, 3], registry=registry)
         histogram.observe(2.7)
-        expected_samples = {
-            histogram._collector: [
-                Sample("_bucket", {"le": "1"}, 0.0),
-                Sample("_bucket", {"le": "2"}, 0.0),
-                Sample("_bucket", {"le": "3"}, 1.0),
-                Sample("_bucket", {"le": "+Inf"}, 1.0),
-                Sample("_count", None, 1.0),
-                Sample("_sum", None, 2.7),
-            ],
-        }
 
-        samples = MultiProcessRedisBackend._generate_samples(registry)
-        assert samples == expected_samples
+        metrics_output = generate_metrics(registry)
+        assert metrics_output == (
+            "# HELP histogram desc\n"
+            "# TYPE histogram histogram\n"
+            'histogram_bucket{le="1"} 0.0\n'
+            'histogram_bucket{le="2"} 0.0\n'
+            'histogram_bucket{le="3"} 1.0\n'
+            'histogram_bucket{le="+Inf"} 1.0\n'
+            "histogram_count 1.0\n"
+            "histogram_sum 2.7\n"
+        )
 
     def test_histogram_labeled(self):
         registry = CollectorRegistry()
@@ -435,19 +443,18 @@ class TestGenerateSamples:
             "histogram", "desc", buckets=[1, 2, 3], required_labels=["bob"], registry=registry
         )
         histogram.labels(bob="cat").observe(2.7)
-        expected_samples = {
-            histogram._collector: [
-                Sample("_bucket", {"bob": "cat", "le": "1"}, 0.0),
-                Sample("_bucket", {"bob": "cat", "le": "2"}, 0.0),
-                Sample("_bucket", {"bob": "cat", "le": "3"}, 1.0),
-                Sample("_bucket", {"bob": "cat", "le": "+Inf"}, 1.0),
-                Sample("_count", {"bob": "cat"}, 1.0),
-                Sample("_sum", {"bob": "cat"}, 2.7),
-            ],
-        }
 
-        samples = MultiProcessRedisBackend._generate_samples(registry)
-        assert samples == expected_samples
+        metrics_output = generate_metrics(registry)
+        assert metrics_output == (
+            "# HELP histogram desc\n"
+            "# TYPE histogram histogram\n"
+            'histogram_bucket{bob="cat",le="1"} 0.0\n'
+            'histogram_bucket{bob="cat",le="2"} 0.0\n'
+            'histogram_bucket{bob="cat",le="3"} 1.0\n'
+            'histogram_bucket{bob="cat",le="+Inf"} 1.0\n'
+            'histogram_count{bob="cat"} 1.0\n'
+            'histogram_sum{bob="cat"} 2.7\n'
+        )
 
     def test_labeled_histogram_is_ordered(self):
         registry = CollectorRegistry()
