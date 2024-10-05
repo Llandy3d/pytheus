@@ -5,7 +5,7 @@ import re
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Callable, Dict, Generator, Iterable, Optional, Sequence, Tuple, Type, Union
+from typing import Callable, Dict, Generator, Iterable, Optional, Self, Sequence, Tuple, Type, Union
 
 from pytheus.backends import get_backend
 from pytheus.exceptions import (
@@ -202,7 +202,7 @@ class _Metric:
         if not self._can_observe:
             raise UnobservableMetricException
 
-    def labels(self, pytheus_labels_: Optional[Labels] = None, **kwargs: str) -> "_Metric":
+    def labels(self, pytheus_labels_: Optional[Labels] = None, **kwargs: str) -> Self:
         """
         If no labels is passed to the call returns itself.
         If there are already present labels, they will be updated with the passed labels_ and if
