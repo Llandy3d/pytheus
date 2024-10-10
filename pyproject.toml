@@ -14,6 +14,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 [project.urls]
@@ -31,7 +32,7 @@ test = [
   "tox == 4.4.11",
 
   # mypy types
-  "types-redis == 4.5.4.0",
+  "types-redis == 4.6.0.20241004",
 ]
 
 redis = [

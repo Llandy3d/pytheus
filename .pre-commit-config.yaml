@@ -31,4 +31,4 @@ repos:
       - id: mypy
         exclude: example.py
         additional_dependencies:
-          - types-redis >= 4.5.4.0"
+          - types-redis >= 4.6.0.20241004
