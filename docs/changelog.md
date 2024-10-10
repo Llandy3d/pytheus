@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.0
+
+- python 3.13 support
+
 ## 0.5.0
 
 - New improved implementation of `_generate_samples` for `MultiProcessRedisBackend`:
