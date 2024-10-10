@@ -32,7 +32,7 @@ test = [
   "tox == 4.4.11",
 
   # mypy types
-  "types-redis == 4.5.4.0",
+  "types-redis == 4.6.0.20241004",
 ]
 
 redis = [
