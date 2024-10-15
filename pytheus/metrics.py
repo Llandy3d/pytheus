@@ -5,18 +5,9 @@ import re
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Dict,
-    Generator,
-    Iterable,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Callable, Dict, Generator, Iterable, Optional, Sequence, Tuple, Type, Union
+
+from typing_extensions import Self
 
 from pytheus.backends import get_backend
 from pytheus.exceptions import (
@@ -26,10 +17,6 @@ from pytheus.exceptions import (
 )
 from pytheus.registry import REGISTRY, Collector, Registry
 from pytheus.utils import InfFloat, MetricType
-
-# Backwards compatibility for python<3.11
-if TYPE_CHECKING:
-    from typing import Self
 
 Labels = Dict[str, str]
 
@@ -217,7 +204,7 @@ class _Metric:
         if not self._can_observe:
             raise UnobservableMetricException
 
-    def labels(self, pytheus_labels_: Optional[Labels] = None, **kwargs: str) -> "Self":
+    def labels(self, pytheus_labels_: Optional[Labels] = None, **kwargs: str) -> Self:
         """
         If no labels is passed to the call returns itself.
         If there are already present labels, they will be updated with the passed labels_ and if
