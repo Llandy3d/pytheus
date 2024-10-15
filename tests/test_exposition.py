@@ -1,8 +1,19 @@
 from unittest import mock
 
+import pytest
+
 from pytheus.exposition import _escape_help, format_labels, generate_metrics
 from pytheus.metrics import Counter, CustomCollector, Histogram
 from pytheus.registry import REGISTRY, CollectorRegistry
+
+
+@pytest.fixture
+def set_empty_registry():
+    """
+    As the REGISTRY object is global by default, we might have data from other tests.
+    So with this fixture we just set a new empty one.
+    """
+    REGISTRY.set_registry(CollectorRegistry())
 
 
 class TestExposition:
@@ -15,7 +26,7 @@ class TestExposition:
         c = Counter("exception_total", "expection desc")
         c.inc(4)
 
-    def test_generate_metrics(self):
+    def test_generate_metrics(self, set_empty_registry):
         self.setup_counters()
         metrics_text = generate_metrics()
         assert metrics_text == (
@@ -32,7 +43,7 @@ class TestExposition:
             ""
         )
 
-    def test_generate_metrics_with_prefix(self):
+    def test_generate_metrics_with_prefix(self, set_empty_registry):
         registry = CollectorRegistry(prefix="testing")
         REGISTRY.set_registry(registry)
         self.setup_counters()
@@ -51,7 +62,7 @@ class TestExposition:
             ""
         )
 
-    def test_generate_metrics_histogram(self):
+    def test_generate_metrics_histogram(self, set_empty_registry):
         registry = CollectorRegistry()
         REGISTRY.set_registry(registry)
 
@@ -62,7 +73,7 @@ class TestExposition:
             '# HELP hello world\n# TYPE hello histogram\nhello_bucket{le="0.005"} 0.0\nhello_bucket{le="0.01"} 0.0\nhello_bucket{le="0.025"} 0.0\nhello_bucket{le="0.05"} 0.0\nhello_bucket{le="0.1"} 0.0\nhello_bucket{le="0.25"} 0.0\nhello_bucket{le="0.5"} 1.0\nhello_bucket{le="1"} 1.0\nhello_bucket{le="2.5"} 1.0\nhello_bucket{le="5"} 1.0\nhello_bucket{le="10"} 1.0\nhello_bucket{le="+Inf"} 1.0\nhello_sum 0.4\nhello_count 1.0\n'
         )
 
-    def test_generate_metrics_histogram_with_labels(self):
+    def test_generate_metrics_histogram_with_labels(self, set_empty_registry):
         registry = CollectorRegistry()
         REGISTRY.set_registry(registry)
 
@@ -76,7 +87,7 @@ class TestExposition:
             '# HELP hello world\n# TYPE hello histogram\nhello_bucket{bob="a",le="0.005"} 0.0\nhello_bucket{bob="a",le="0.01"} 0.0\nhello_bucket{bob="a",le="0.025"} 0.0\nhello_bucket{bob="a",le="0.05"} 0.0\nhello_bucket{bob="a",le="0.1"} 0.0\nhello_bucket{bob="a",le="0.25"} 0.0\nhello_bucket{bob="a",le="0.5"} 1.0\nhello_bucket{bob="a",le="1"} 1.0\nhello_bucket{bob="a",le="2.5"} 1.0\nhello_bucket{bob="a",le="5"} 1.0\nhello_bucket{bob="a",le="10"} 1.0\nhello_bucket{bob="a",le="+Inf"} 1.0\nhello_sum{bob="a"} 0.4\nhello_count{bob="a"} 1.0\nhello_bucket{bob="b",le="0.005"} 0.0\nhello_bucket{bob="b",le="0.01"} 0.0\nhello_bucket{bob="b",le="0.025"} 0.0\nhello_bucket{bob="b",le="0.05"} 0.0\nhello_bucket{bob="b",le="0.1"} 0.0\nhello_bucket{bob="b",le="0.25"} 0.0\nhello_bucket{bob="b",le="0.5"} 0.0\nhello_bucket{bob="b",le="1"} 0.0\nhello_bucket{bob="b",le="2.5"} 0.0\nhello_bucket{bob="b",le="5"} 0.0\nhello_bucket{bob="b",le="10"} 1.0\nhello_bucket{bob="b",le="+Inf"} 1.0\nhello_sum{bob="b"} 7.0\nhello_count{bob="b"} 1.0\n'
         )
 
-    def test_generate_metrics_histogram_with_labels_and_default_labels(self):
+    def test_generate_metrics_histogram_with_labels_and_default_labels(self, set_empty_registry):
         registry = CollectorRegistry()
         REGISTRY.set_registry(registry)
 
@@ -90,7 +101,7 @@ class TestExposition:
             '# HELP hello world\n# TYPE hello histogram\nhello_bucket{bob="default",le="0.005"} 0.0\nhello_bucket{bob="default",le="0.01"} 0.0\nhello_bucket{bob="default",le="0.025"} 0.0\nhello_bucket{bob="default",le="0.05"} 0.0\nhello_bucket{bob="default",le="0.1"} 0.0\nhello_bucket{bob="default",le="0.25"} 0.0\nhello_bucket{bob="default",le="0.5"} 0.0\nhello_bucket{bob="default",le="1"} 0.0\nhello_bucket{bob="default",le="2.5"} 0.0\nhello_bucket{bob="default",le="5"} 0.0\nhello_bucket{bob="default",le="10"} 0.0\nhello_bucket{bob="default",le="+Inf"} 0.0\nhello_sum{bob="default"} 0.0\nhello_count{bob="default"} 0.0\nhello_bucket{bob="a",le="0.005"} 0.0\nhello_bucket{bob="a",le="0.01"} 0.0\nhello_bucket{bob="a",le="0.025"} 0.0\nhello_bucket{bob="a",le="0.05"} 0.0\nhello_bucket{bob="a",le="0.1"} 0.0\nhello_bucket{bob="a",le="0.25"} 0.0\nhello_bucket{bob="a",le="0.5"} 1.0\nhello_bucket{bob="a",le="1"} 1.0\nhello_bucket{bob="a",le="2.5"} 1.0\nhello_bucket{bob="a",le="5"} 1.0\nhello_bucket{bob="a",le="10"} 1.0\nhello_bucket{bob="a",le="+Inf"} 1.0\nhello_sum{bob="a"} 0.4\nhello_count{bob="a"} 1.0\n'
         )
 
-    def test_generate_metrics_respects_escaping(self):
+    def test_generate_metrics_respects_escaping(self, set_empty_registry):
         registry = CollectorRegistry()
         counter = Counter(
             "http_req_total", 'slash\\quote"newline\n', required_labels=["bob"], registry=registry
