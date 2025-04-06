@@ -1,5 +1,7 @@
 import json
 from collections import defaultdict
+from queue import Queue
+from threading import Thread
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 import redis
@@ -13,9 +15,11 @@ if TYPE_CHECKING:
     from pytheus.registry import Collector, Registry
 
 
-class MultiProcessRedisBackend:
+class MultiProcessBackgroundRedisBackend:
     """
     Provides a multi-process backend that uses Redis.
+    This versions uses threading and a queue to load operations in the background,
+    and not block the current thread.
     Single dimension metrics will be stored as list (ex. Counter) while labelled
     metrics will be stored in an hash.
     Currently is very naive, and there is a lot of room for improvement.
@@ -24,6 +28,8 @@ class MultiProcessRedisBackend:
 
     EXPIRE_KEY_TIME = 3600  # 1 hour
     CONNECTION_POOL: Optional[redis.Redis] = None
+    WORKER_THREAD: Optional[Thread] = None
+    QUEUE: Optional[Queue] = None  # Thread-safe
 
     def __init__(
         self,
@@ -79,6 +85,20 @@ class MultiProcessRedisBackend:
             decode_responses=True,
         )
         cls.CONNECTION_POOL.ping()
+        if not cls.WORKER_THREAD:  # TODO Dirty but works, better rework the whole method?
+            cls.QUEUE = Queue()
+            cls.WORKER_THREAD = Thread(target=cls._worker_thread)
+            cls.WORKER_THREAD.start()
+
+    @classmethod
+    def _worker_thread(cls) -> None:
+        while True:
+            callback, value = cls.QUEUE.get()  # Blocking operation for this worker thread
+            try:
+                callback(value)
+            except Exception:
+                pass  # TODO Special handling...
+
 
     def _init_key(self) -> None:
         """
@@ -244,7 +264,7 @@ class MultiProcessRedisBackend:
 
         return samples_dict
 
-    def inc(self, value: float) -> None:
+    def _inc(self, value: float) -> None:
         assert self.CONNECTION_POOL is not None
         if self._labels_hash:
             self.CONNECTION_POOL.hincrbyfloat(self._key_name, self._labels_hash, value)
@@ -253,7 +273,7 @@ class MultiProcessRedisBackend:
 
         self.CONNECTION_POOL.expire(self._key_name, self.EXPIRE_KEY_TIME)
 
-    def dec(self, value: float) -> None:
+    def _dec(self, value: float) -> None:
         assert self.CONNECTION_POOL is not None
         if self._labels_hash:
             self.CONNECTION_POOL.hincrbyfloat(self._key_name, self._labels_hash, -value)
@@ -262,7 +282,7 @@ class MultiProcessRedisBackend:
 
         self.CONNECTION_POOL.expire(self._key_name, self.EXPIRE_KEY_TIME)
 
-    def set(self, value: float) -> None:
+    def _set(self, value: float) -> None:
         assert self.CONNECTION_POOL is not None
         if self._labels_hash:
             self.CONNECTION_POOL.hset(self._key_name, self._labels_hash, value)
@@ -270,6 +290,15 @@ class MultiProcessRedisBackend:
             self.CONNECTION_POOL.set(self._key_name, value)
 
         self.CONNECTION_POOL.expire(self._key_name, self.EXPIRE_KEY_TIME)
+
+    def inc(self, value: float) -> None:
+        self.QUEUE.put((self._inc, value))
+
+    def dec(self, value: float) -> None:
+        self.QUEUE.put((self._dec, value))
+
+    def set(self, value: float) -> None:
+        self.QUEUE.put((self._set, value))
 
     def get(self) -> float:
         """
