@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+
 ## 0.6.1
 
 - fix Mypy not recognizing type annotations
