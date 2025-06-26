@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.6.1
+
+- fix Mypy not recognizing type annotations
+- fix `labels` method returning `_Metrics` instead of `Self`
+
 ## 0.6.0
 
 - python 3.13 support
