@@ -479,7 +479,7 @@ class Histogram(_Metric):
         labels: Optional[Labels] = None,
         default_labels: Optional[Labels] = None,
         registry: Optional[Registry] = REGISTRY,
-        collector: Optional[_MetricCollector] = None,
+        collector: Optional[_MetricCollector[Self]] = None,
         buckets: Sequence[float] = DEFAULT_BUCKETS,
     ) -> None:
         super().__init__(
@@ -608,7 +608,7 @@ class Summary(_Metric):
         labels: Optional[Labels] = None,
         default_labels: Optional[Labels] = None,
         registry: Optional[Registry] = REGISTRY,
-        collector: Optional[_MetricCollector] = None,
+        collector: Optional[_MetricCollector[Self]] = None,
     ) -> None:
         super().__init__(
             name,
