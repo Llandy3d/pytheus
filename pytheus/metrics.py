@@ -5,7 +5,21 @@ import re
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Callable, Dict, Generator, Iterable, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    Callable,
+    Dict,
+    Generator,
+    Generic,
+    Iterable,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
+
+from typing_extensions import Self
 
 from pytheus.backends import get_backend
 from pytheus.exceptions import (
@@ -49,7 +63,10 @@ class CustomCollector(Collector):
         pass
 
 
-class _MetricCollector:
+T = TypeVar("T", bound="_Metric")
+
+
+class _MetricCollector(Generic[T]):
     """
     This handles the core logic for a specific named metric.
     It will do label validation, it will have the metric name and most importantly it will keep
@@ -62,7 +79,7 @@ class _MetricCollector:
         self,
         name: str,
         description: str,
-        metric: "_Metric",
+        metric: T,
         required_labels: Optional[Sequence[str]] = None,
         default_labels: Optional[Labels] = None,
         registry: Optional[Registry] = REGISTRY,
@@ -84,7 +101,7 @@ class _MetricCollector:
         self._default_labels = default_labels
         self._default_labels_count = len(default_labels) if default_labels else 0
         self._metric = metric
-        self._labeled_metrics: Dict[Tuple[str, ...], _Metric] = {}
+        self._labeled_metrics: Dict[Tuple[str, ...], T] = {}
         self._registry = registry
 
         if registry:
@@ -146,7 +163,7 @@ class _Metric:
         labels: Optional[Labels] = None,
         default_labels: Optional[Labels] = None,
         registry: Optional[Registry] = REGISTRY,
-        collector: Optional[_MetricCollector] = None,
+        collector: Optional[_MetricCollector[Self]] = None,
     ) -> None:
         self.name = name
         self.description = description
@@ -202,7 +219,7 @@ class _Metric:
         if not self._can_observe:
             raise UnobservableMetricException
 
-    def labels(self, pytheus_labels_: Optional[Labels] = None, **kwargs: str) -> "_Metric":
+    def labels(self, pytheus_labels_: Optional[Labels] = None, **kwargs: str) -> Self:
         """
         If no labels is passed to the call returns itself.
         If there are already present labels, they will be updated with the passed labels_ and if
@@ -462,7 +479,7 @@ class Histogram(_Metric):
         labels: Optional[Labels] = None,
         default_labels: Optional[Labels] = None,
         registry: Optional[Registry] = REGISTRY,
-        collector: Optional[_MetricCollector] = None,
+        collector: Optional[_MetricCollector[Self]] = None,
         buckets: Sequence[float] = DEFAULT_BUCKETS,
     ) -> None:
         super().__init__(
@@ -591,7 +608,7 @@ class Summary(_Metric):
         labels: Optional[Labels] = None,
         default_labels: Optional[Labels] = None,
         registry: Optional[Registry] = REGISTRY,
-        collector: Optional[_MetricCollector] = None,
+        collector: Optional[_MetricCollector[Self]] = None,
     ) -> None:
         super().__init__(
             name,

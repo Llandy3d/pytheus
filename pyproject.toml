@@ -4,6 +4,7 @@ version = "0.6.0"
 authors = [
   { name="Llandy Riveron Del Risco", email="llandy3d@gmail.com" },
 ]
+dependencies = ["typing-extensions >= 4.0.0"]
 description = "playing with metrics"
 readme = "README.md"
 requires-python = ">=3.8"
